@@ -16,8 +16,8 @@ from _shared import (
 
 
 VALID_PRESETS = {
-    "video_edit", "photo_studio", "design_agency", "ugc", "accounting", "legal",
-    "ecommerce", "tech_support", "music_production", "events", "real_estate", "coaching",
+    "video_edit", "photo_studio", "design_agency", "ugc",
+    "music_production", "events", "coaching",
     "custom",
 }
 

@@ -245,15 +245,10 @@
       { id: 'photo_studio',     emoji: '📸', name: 'Fotografía' },
       { id: 'design_agency',    emoji: '🎨', name: 'Diseño' },
       { id: 'ugc',              emoji: '📱', name: 'UGC / Content' },
-      { id: 'accounting',       emoji: '📋', name: 'Contabilidad' },
-      { id: 'legal',            emoji: '⚖️', name: 'Legal' },
-      { id: 'ecommerce',        emoji: '🛒', name: 'E-commerce' },
-      { id: 'tech_support',     emoji: '🔧', name: 'Servicio técnico' },
       { id: 'music_production', emoji: '🎤', name: 'Producción musical' },
       { id: 'events',           emoji: '🎉', name: 'Eventos' },
-      { id: 'real_estate',      emoji: '🏠', name: 'Inmobiliaria' },
-      { id: 'coaching',         emoji: '🎙️', name: 'Coaching' },
-      { id: 'custom',           emoji: '✨', name: 'Otros (custom)' },
+      { id: 'coaching',         emoji: '🎙️', name: 'Coaching / Cursos' },
+      { id: 'custom',           emoji: '✨', name: 'Otra agencia' },
     ];
 
     // Render presets
@@ -363,13 +358,8 @@
           photo_studio:     { input: 'shoots', output: 'fotos retocadas', assignees: 'retocadores' },
           design_agency:    { input: 'briefs', output: 'diseños', assignees: 'diseñadores' },
           ugc:              { input: 'materiales', output: 'edits', assignees: 'editores' },
-          accounting:       { input: 'recibos', output: 'procesados', assignees: 'contadores' },
-          legal:            { input: 'documentos', output: 'revisados', assignees: 'abogados' },
-          ecommerce:        { input: 'pedidos', output: 'envíos', assignees: 'operadores' },
-          tech_support:     { input: 'reportes', output: 'resoluciones', assignees: 'técnicos' },
           music_production: { input: 'demos', output: 'mezclas', assignees: 'productores' },
           events:           { input: 'briefs', output: 'eventos producidos', assignees: 'productores' },
-          real_estate:      { input: 'visitas', output: 'cierres', assignees: 'agentes' },
           coaching:         { input: 'sesiones', output: 'grabaciones procesadas', assignees: 'coaches' },
           custom:           {
             input: (data.custom_input || 'archivos') + (data.custom_input?.endsWith('s') ? '' : 's'),
