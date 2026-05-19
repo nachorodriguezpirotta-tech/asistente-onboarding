@@ -4,12 +4,5 @@
     { "source": "/", "destination": "/index.html" },
     { "source": "/start", "destination": "/start.html" },
     { "source": "/success", "destination": "/success.html" }
-  ],
-  "functions": {
-    "api/start.py": { "memory": 256, "maxDuration": 10 },
-    "api/oauth_init.py": { "memory": 256, "maxDuration": 10 },
-    "api/oauth_callback.py": { "memory": 256, "maxDuration": 10 },
-    "api/admin_get.py": { "memory": 256, "maxDuration": 10 },
-    "api/status.py": { "memory": 256, "maxDuration": 10 }
-  }
+  ]
 }
