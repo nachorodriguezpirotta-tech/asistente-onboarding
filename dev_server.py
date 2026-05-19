@@ -1,0 +1,284 @@
+#!/usr/bin/env python3
+"""
+Dev server local — simula Vercel para testing sin deploy.
+
+  - Sirve /public/* como estáticos
+  - Rutea /api/* a las funciones Python en /api/
+  - Storage in-memory (dict) en vez de Vercel KV
+  - Mock de Google OAuth (no abre Google real, crea pedido fake completo)
+
+Uso:
+    python3 dev_server.py
+    open http://localhost:3000
+
+Variables de entorno opcionales:
+    PORT=3000              (default 3000)
+    REAL_GOOGLE=1          (si se setea, usa Google OAuth real)
+    GOOGLE_CLIENT_ID=...
+    GOOGLE_CLIENT_SECRET=...
+"""
+
+import http.server
+import importlib.util
+import json
+import os
+import re
+import socketserver
+import sys
+import time
+import urllib.parse
+from io import BytesIO
+from pathlib import Path
+
+BASE = Path(__file__).parent
+PORT = int(os.environ.get("PORT", "3000"))
+REAL_GOOGLE = os.environ.get("REAL_GOOGLE") == "1"
+
+# ─── Inyectar mocks de _shared antes de que los handlers lo importen ──────────
+
+# Asegurar que api/ esté en sys.path
+sys.path.insert(0, str(BASE / "api"))
+
+# Crear módulo _shared MOCK
+import types
+
+_kv_memory: dict = {}
+_logs: list = []
+
+
+def _mock_kv_set(key, value, ttl_seconds=None):
+    _kv_memory[key] = {"value": json.dumps(value) if isinstance(value, dict) else value, "ts": time.time()}
+
+
+def _mock_kv_get(key):
+    rec = _kv_memory.get(key)
+    if not rec:
+        return None
+    try:
+        return json.loads(rec["value"])
+    except Exception:
+        return rec["value"]
+
+
+def _mock_kv_update(key, updates):
+    current = _mock_kv_get(key) or {}
+    current.update(updates)
+    _mock_kv_set(key, current)
+    return current
+
+
+def _mock_new_pedido_id():
+    import secrets
+    return secrets.token_urlsafe(9)[:12]
+
+
+def _mock_base_url(handler):
+    host = handler.headers.get("Host", f"localhost:{PORT}")
+    return f"http://{host}"
+
+
+def _mock_json_response(handler, data, status=200):
+    body = json.dumps(data).encode()
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/json")
+    handler.send_header("Access-Control-Allow-Origin", "*")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
+def _mock_redirect(handler, url, status=302):
+    handler.send_response(status)
+    handler.send_header("Location", url)
+    handler.send_header("Content-Length", "0")
+    handler.end_headers()
+
+
+def _mock_read_json_body(handler):
+    length = int(handler.headers.get("Content-Length", "0"))
+    if length == 0:
+        return {}
+    raw = handler.rfile.read(length)
+    return json.loads(raw.decode("utf-8"))
+
+
+def _mock_google_oauth_url(state, redirect_uri):
+    if REAL_GOOGLE:
+        # Importar el real
+        from _shared import google_oauth_url as real
+        return real(state, redirect_uri)
+    # Mock: redirige directo al callback con un code fake
+    return f"{redirect_uri}?code=fake_code_{state}&state={state}"
+
+
+def _mock_google_exchange_code(code, redirect_uri):
+    if REAL_GOOGLE:
+        from _shared import google_exchange_code as real
+        return real(code, redirect_uri)
+    # Mock: devuelve tokens fake
+    return {
+        "access_token": f"fake_access_{code}",
+        "refresh_token": f"fake_refresh_{code}",
+        "expires_in": 3600,
+        "scope": "drive sheets gmail",
+    }
+
+
+def _mock_google_userinfo(access_token):
+    if REAL_GOOGLE:
+        from _shared import google_userinfo as real
+        return real(access_token)
+    return {"email": "cliente-test@example.com", "name": "Cliente Test"}
+
+
+def _mock_notify_admin(subject, body_text, body_html=None):
+    # Si están seteadas las credenciales reales, mandar mail real
+    if os.environ.get("NOTIFY_MAIL_REFRESH_TOKEN") and os.environ.get("ADMIN_NOTIFY_EMAIL"):
+        try:
+            from _shared import notify_admin as real_notify
+            ok = real_notify(subject, body_text, body_html)
+            if ok:
+                print(f"\n📧 [REAL ADMIN MAIL ENVIADO]")
+                print(f"   To: {os.environ.get('ADMIN_NOTIFY_EMAIL')}")
+                print(f"   Subject: {subject}")
+                print()
+                return True
+        except Exception as e:
+            print(f"⚠️  Mail real falló ({e}), cayendo a mock")
+    _logs.append({"type": "admin_mail", "subject": subject, "body_text": body_text})
+    print(f"\n📧 [MOCK ADMIN MAIL]")
+    print(f"   Subject: {subject}")
+    print(f"   Body:\n{body_text[:500]}")
+    print()
+    return True
+
+
+# Construir el módulo _shared mock
+shared_mock = types.ModuleType("_shared")
+shared_mock.kv_set = _mock_kv_set
+shared_mock.kv_get = _mock_kv_get
+shared_mock.kv_update = _mock_kv_update
+shared_mock.new_pedido_id = _mock_new_pedido_id
+shared_mock.base_url = _mock_base_url
+shared_mock.json_response = _mock_json_response
+shared_mock.redirect = _mock_redirect
+shared_mock.read_json_body = _mock_read_json_body
+shared_mock.google_oauth_url = _mock_google_oauth_url
+shared_mock.google_exchange_code = _mock_google_exchange_code
+shared_mock.google_userinfo = _mock_google_userinfo
+shared_mock.notify_admin = _mock_notify_admin
+
+sys.modules["_shared"] = shared_mock
+
+# Mock ADMIN_TOKEN env var para admin_get
+os.environ.setdefault("ADMIN_TOKEN", "dev_admin_token_local")
+
+
+# ─── Cargar handlers dinámicamente ─────────────────────────────────────────────
+
+def _load_handler(name):
+    """Importa api/<name>.py y devuelve la clase handler."""
+    spec = importlib.util.spec_from_file_location(name, BASE / "api" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.handler
+
+
+# Cache de handlers
+_HANDLERS = {}
+
+
+def get_handler(name):
+    if name not in _HANDLERS:
+        _HANDLERS[name] = _load_handler(name)
+    return _HANDLERS[name]
+
+
+# ─── Dev HTTP server ──────────────────────────────────────────────────────────
+
+API_ROUTES = {
+    "/api/start": "start",
+    "/api/oauth_init": "oauth_init",
+    "/api/oauth_callback": "oauth_callback",
+    "/api/admin_get": "admin_get",
+    "/api/status": "status",
+}
+
+
+class DevHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(BASE), **kwargs)
+
+    def log_message(self, fmt, *args):
+        # Quiet
+        sys.stderr.write(f"  {self.command} {self.path}\n")
+
+    def _route_api(self, method):
+        parsed = urllib.parse.urlparse(self.path)
+        # Match exacto o por prefijo
+        for path, handler_name in API_ROUTES.items():
+            if parsed.path == path or parsed.path == path + "/":
+                HandlerCls = get_handler(handler_name)
+                # Crear un wrapper que llame al método correcto
+                inst = HandlerCls.__new__(HandlerCls)
+                inst.rfile = self.rfile
+                inst.wfile = self.wfile
+                inst.headers = self.headers
+                inst.command = self.command
+                inst.path = self.path
+                inst.client_address = self.client_address
+                inst.request = self.request
+                inst.server = self.server
+                inst.send_response = self.send_response
+                inst.send_header = self.send_header
+                inst.end_headers = self.end_headers
+                inst.send_error = self.send_error
+                # Llamar al método del handler
+                method_name = f"do_{method}"
+                if hasattr(inst, method_name):
+                    return getattr(inst, method_name)()
+                else:
+                    self.send_error(405, "Method Not Allowed")
+                    return True
+        return False
+
+    def do_GET(self):
+        if self._route_api("GET"):
+            return
+        # Reescrituras del vercel.json
+        if self.path in ("/", "/start", "/success"):
+            mapping = {"/": "/index.html", "/start": "/start.html", "/success": "/success.html"}
+            self.path = mapping.get(self.path, self.path)
+        return super().do_GET()
+
+    def do_POST(self):
+        if self._route_api("POST"):
+            return
+        self.send_error(404)
+
+    def do_OPTIONS(self):
+        if self._route_api("OPTIONS"):
+            return
+        self.send_error(404)
+
+
+def main():
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", PORT), DevHandler) as httpd:
+        print(f"\n{'='*60}")
+        print(f"  ASISTENTE ONBOARDING — Dev Server")
+        print(f"{'='*60}")
+        print(f"  URL:     http://localhost:{PORT}")
+        print(f"  Mode:    {'REAL Google OAuth' if REAL_GOOGLE else 'MOCK (no Google real)'}")
+        print(f"  Storage: in-memory (se pierde al reiniciar)")
+        print(f"  Admin token: dev_admin_token_local")
+        print(f"{'='*60}")
+        print(f"  Ctrl+C para detener\n")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\n  Server detenido.")
+
+
+if __name__ == "__main__":
+    main()

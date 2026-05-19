@@ -1,0 +1,2 @@
+# Sin dependencias externas — solo stdlib de Python.
+# urllib.request es suficiente para KV REST + Google OAuth + Gmail API.

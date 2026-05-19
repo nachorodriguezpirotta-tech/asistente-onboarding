@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Listo!</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .card {
+      max-width: 560px;
+      width: 100%;
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 16px;
+      padding: 48px 32px;
+      text-align: center;
+    }
+    .check {
+      width: 80px; height: 80px;
+      background: rgba(76, 175, 80, 0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 40px;
+    }
+    h1 { color: #fff; font-size: 28px; margin-bottom: 12px; letter-spacing: -0.01em; }
+    p { color: #a0a0a0; font-size: 16px; line-height: 1.6; margin-bottom: 16px; }
+    .highlight { color: #ff6b35; font-weight: 600; }
+
+    .progress-container {
+      margin: 32px 0 16px;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 12px 0 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b35, #ff8c5a);
+      border-radius: 4px;
+      width: 0%;
+      transition: width .6s ease;
+    }
+    .status-label {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .status-meta { color: #777; font-size: 13px; margin-top: 8px; }
+
+    .info-box {
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .info-box h3 { color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .info-box ul { list-style: none; }
+    .info-box li { color: #c0c0c0; font-size: 14px; padding: 6px 0; padding-left: 24px; position: relative; }
+    .info-box li:before { content: '→'; position: absolute; left: 0; color: #ff6b35; }
+
+    .ticket {
+      background: #0a0a0a;
+      border: 1px dashed #444;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 24px;
+      font-family: 'SF Mono', Menlo, monospace;
+      color: #ff6b35;
+      font-size: 13px;
+    }
+
+    .open-dashboard {
+      display: inline-block;
+      background: #ff6b35;
+      color: #fff;
+      padding: 16px 36px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+      margin-top: 16px;
+      transition: transform .15s, background .15s;
+    }
+    .open-dashboard:hover { background: #ff5219; transform: translateY(-2px); }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #333;
+      border-top-color: #ff6b35;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="check">✅</div>
+    <h1 id="title">¡Conectado!</h1>
+    <p id="subtitle">Recibimos tu pedido y guardamos tus permisos de Google.<br>
+    <span class="highlight">En los próximos 30 minutos</span> te llega un mail con el link de tu sistema andando.</p>
+
+    <div class="progress-container">
+      <div class="status-label" id="status-label">
+        <span class="spinner"></span>Cargando estado...
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="status-meta" id="status-meta">—</div>
+    </div>
+
+    <div id="not-deployed">
+      <div class="info-box">
+        <h3>Próximos pasos</h3>
+        <ul>
+          <li>Te llega mail con el link de tu dashboard</li>
+          <li>Cargás los responsables de tu equipo (2 min)</li>
+          <li>El sistema empieza a watchear tu Drive automático</li>
+          <li>A medida que tu equipo sube archivos, vas viendo el dashboard llenarse</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="deployed" style="display: none;">
+      <p>Tu dashboard ya está listo:</p>
+      <a href="#" id="dashboard-link" class="open-dashboard">Abrir mi dashboard →</a>
+    </div>
+
+    <div class="ticket" id="ticket">Cargando ID del pedido...</div>
+    <p style="font-size: 12px; margin-top: 12px; color: #555;">Guardá este ID por si necesitás contactarnos.</p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    document.getElementById('ticket').textContent = id ? `Pedido: ${id}` : 'Sin ID — chequeá tu mail';
+
+    if (!id) {
+      document.getElementById('status-label').innerHTML = '⚠️ Sin ID de pedido. Recargá la página desde el mail que te llegó.';
+      document.getElementById('status-meta').textContent = '';
+    } else {
+      // Poll de status cada 5s
+      async function refreshStatus() {
+        try {
+          const r = await fetch(`/api/status?id=${encodeURIComponent(id)}`);
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.error || 'Error');
+          }
+          const s = await r.json();
+          document.getElementById('status-label').innerHTML = s.status === 'deployed'
+            ? `✅ ${s.status_label}`
+            : `<span class="spinner"></span>${s.status_label}`;
+          document.getElementById('progress-fill').style.width = `${s.progress}%`;
+          const created = s.created_at ? new Date(s.created_at) : null;
+          const now = new Date();
+          let metaText = '';
+          if (created) {
+            const min = Math.floor((now - created) / 60000);
+            metaText = `Hace ${min} min`;
+          }
+          if (s.status === 'deployed') {
+            metaText += ` · Deployado: ${new Date(s.deployed_at).toLocaleString('es-AR')}`;
+            document.getElementById('not-deployed').style.display = 'none';
+            document.getElementById('deployed').style.display = 'block';
+            document.getElementById('dashboard-link').href = s.dashboard_url || '#';
+            document.getElementById('title').textContent = '🎉 ¡Tu sistema está listo!';
+            document.getElementById('subtitle').innerHTML = `Tu dashboard de <strong style="color:#fff">${s.brand_name}</strong> está andando. Compartilo con tu equipo.`;
+            return true; // dejar de pollear
+          }
+          document.getElementById('status-meta').textContent = metaText;
+          return false;
+        } catch (e) {
+          document.getElementById('status-label').textContent = `⚠️ ${e.message}`;
+          return false;
+        }
+      }
+
+      refreshStatus().then(done => {
+        if (!done) {
+          setInterval(refreshStatus, 5000);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

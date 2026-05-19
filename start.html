@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurar tu Asistente</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 560px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { color: #fff; font-size: 32px; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .header p { color: #a0a0a0; font-size: 16px; }
+
+    .progress { display: flex; gap: 8px; margin-bottom: 32px; }
+    .progress .bar { flex: 1; height: 4px; background: #1a1a1a; border-radius: 2px; }
+    .progress .bar.active { background: #ff6b35; }
+
+    .card { background: #141414; border: 1px solid #262626; border-radius: 16px; padding: 32px; }
+    .card h2 { color: #fff; font-size: 22px; margin-bottom: 24px; }
+
+    label { display: block; color: #d0d0d0; font-size: 14px; margin-bottom: 6px; margin-top: 16px; font-weight: 500; }
+    label:first-of-type { margin-top: 0; }
+    .hint { color: #777; font-size: 13px; margin-bottom: 8px; }
+    input, select, textarea {
+      width: 100%;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #ff6b35; }
+    select { cursor: pointer; }
+
+    .preset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 8px; }
+    .preset {
+      background: #0a0a0a;
+      border: 2px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 16px 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .preset:hover { border-color: #444; }
+    .preset.selected { border-color: #ff6b35; background: rgba(255, 107, 53, 0.08); }
+    .preset .emoji { font-size: 24px; margin-bottom: 4px; }
+    .preset .name { color: #fff; font-size: 13px; font-weight: 500; }
+
+    button {
+      width: 100%;
+      background: #ff6b35;
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: background .15s;
+      font-family: inherit;
+    }
+    button:hover { background: #ff5219; }
+    button:disabled { background: #333; cursor: not-allowed; opacity: 0.6; }
+
+    .step-2 { display: none; text-align: center; }
+    .step-2 .icon { font-size: 56px; margin-bottom: 16px; }
+    .step-2 h2 { font-size: 24px; }
+    .step-2 p { color: #a0a0a0; margin: 16px 0 32px; }
+    .google-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #fff;
+      color: #1a1a1a;
+      padding: 16px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      transition: transform .15s;
+    }
+    .google-btn:hover { transform: translateY(-2px); }
+
+    .error { background: #2a1a1a; color: #ff8080; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 14px; }
+    .warning { background: #2a2418; color: #ffd080; padding: 12px; border-radius: 8px; margin: 0 0 16px 0; font-size: 14px; }
+    .back { color: #a0a0a0; text-decoration: none; font-size: 14px; display: inline-block; margin-top: 16px; }
+    .back:hover { color: #fff; }
+
+    .drive-options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .drive-opt {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #0a0a0a; border: 2px solid #2a2a2a; padding: 14px;
+      border-radius: 10px; cursor: pointer; transition: border-color .15s;
+    }
+    .drive-opt:hover { border-color: #444; }
+    .drive-opt input[type="radio"] { width: auto; margin: 4px 0 0; cursor: pointer; }
+    .drive-opt strong { color: #fff; font-size: 15px; display: block; margin-bottom: 2px; }
+    .opt-hint { color: #888; font-size: 13px; }
+    .drive-opt:has(input:checked) { border-color: #ff6b35; background: rgba(255, 107, 53, 0.04); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Configurá tu sistema</h1>
+      <p>2 pasos. Tarda 1 minuto.</p>
+    </div>
+
+    <div class="progress">
+      <div class="bar active" id="bar1"></div>
+      <div class="bar" id="bar2"></div>
+    </div>
+
+    <!-- PASO 1: FORMULARIO -->
+    <div class="card" id="step-1">
+      <h2>Contanos de tu negocio</h2>
+
+      <label>Nombre del negocio</label>
+      <div class="hint">Va a aparecer en los mails y el dashboard</div>
+      <input type="text" id="brand_name" placeholder="Ej: Lente Pro Estudio" required>
+
+      <label>Tu email (admin)</label>
+      <div class="hint">Te llega el link de tu sistema cuando esté listo</div>
+      <input type="email" id="admin_email" placeholder="tu@email.com" required>
+
+      <label>Tipo de negocio</label>
+      <div class="hint">Esto determina el vocabulario del sistema</div>
+      <div class="preset-grid" id="presets"></div>
+      <input type="hidden" id="preset" value="">
+
+      <!-- Campos extra cuando elige "Otros" -->
+      <div id="custom-fields" style="display: none; margin-top: 16px; padding: 16px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px;">
+        <label style="margin-top: 0;">Describí tu negocio brevemente</label>
+        <div class="hint">Ej: "Estudio de animación 2D" o "Agencia de transcripciones"</div>
+        <input type="text" id="custom_description" placeholder="A qué se dedica tu negocio">
+
+        <label>¿Qué cosa entra al sistema? (singular)</label>
+        <div class="hint">El "input" que detecta el sistema. Ej: guion, audio, pedido, ticket</div>
+        <input type="text" id="custom_input" placeholder="archivo">
+
+        <label>¿Qué cosa entrega tu equipo? (singular)</label>
+        <div class="hint">El "output" que cierra cada tarea. Ej: animación, transcripción, presupuesto</div>
+        <input type="text" id="custom_output" placeholder="entrega">
+
+        <label>¿Cómo se llama el responsable que hace el trabajo?</label>
+        <div class="hint">Singular. Ej: animador, transcriptor, vendedor, técnico</div>
+        <input type="text" id="custom_assignee" placeholder="responsable">
+      </div>
+
+      <label>¿De dónde leemos los archivos en Drive?</label>
+      <div class="drive-options">
+        <label class="drive-opt">
+          <input type="radio" name="drive_mode" value="folder" checked>
+          <div>
+            <strong>Una carpeta específica</strong>
+            <div class="opt-hint">Pegá el link de la carpeta donde están los proyectos</div>
+          </div>
+        </label>
+        <label class="drive-opt">
+          <input type="radio" name="drive_mode" value="my_drive">
+          <div>
+            <strong>Toda mi unidad de Drive</strong>
+            <div class="opt-hint">El sistema mira todo Mi unidad (recomendado si todos tus proyectos están sueltos)</div>
+          </div>
+        </label>
+      </div>
+      <div id="folder-input-wrapper">
+        <input type="url" id="drive_url" placeholder="https://drive.google.com/drive/folders/..." style="margin-top: 8px;">
+        <div class="hint">Copialo desde la URL de la carpeta en tu navegador</div>
+      </div>
+
+      <div id="error1"></div>
+
+      <button id="submit1" type="button">Continuar →</button>
+      <a href="/" class="back">← Volver</a>
+    </div>
+
+    <!-- PASO 2: OAUTH GOOGLE -->
+    <div class="card step-2" id="step-2">
+      <div class="icon">🔐</div>
+      <h2>Conectá tu Google</h2>
+      <p>Necesitamos permiso para:<br>
+        <strong style="color:#d0d0d0">leer tu Drive</strong>,
+        <strong style="color:#d0d0d0">leer tu Sheet</strong>,
+        <strong style="color:#d0d0d0">mandar mails</strong>.<br>
+        <span style="font-size:13px;color:#777">Tus tokens se guardan encriptados. Podés revocarlos en cualquier momento.</span>
+      </p>
+      <a id="google-btn" href="#" class="google-btn">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+        Continuar con Google
+      </a>
+      <a href="#" class="back" id="back-to-1">← Editar datos</a>
+    </div>
+  </div>
+
+  <script>
+    const PRESETS = [
+      { id: 'video_edit',    emoji: '🎬', name: 'Edición video' },
+      { id: 'photo_studio',  emoji: '📸', name: 'Fotografía' },
+      { id: 'design_agency', emoji: '🎨', name: 'Diseño' },
+      { id: 'ugc',           emoji: '📱', name: 'UGC / Content' },
+      { id: 'accounting',    emoji: '📋', name: 'Contabilidad' },
+      { id: 'legal',         emoji: '⚖️', name: 'Legal' },
+      { id: 'custom',        emoji: '✨', name: 'Otros (custom)' },
+    ];
+
+    // Render presets
+    const presetsEl = document.getElementById('presets');
+    PRESETS.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'preset';
+      div.dataset.id = p.id;
+      div.innerHTML = `<div class="emoji">${p.emoji}</div><div class="name">${p.name}</div>`;
+      div.onclick = () => {
+        document.querySelectorAll('.preset').forEach(el => el.classList.remove('selected'));
+        div.classList.add('selected');
+        document.getElementById('preset').value = p.id;
+        document.getElementById('custom-fields').style.display = (p.id === 'custom') ? 'block' : 'none';
+      };
+      presetsEl.appendChild(div);
+    });
+
+    // Mostrar warning si volvió de OAuth cancelado
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('error') === 'denied') {
+      const card = document.getElementById('step-1');
+      const w = document.createElement('div');
+      w.className = 'warning';
+      w.textContent = '⚠️ Cancelaste el permiso en Google. Para usar el sistema necesitamos los 3 permisos. Probá de nuevo.';
+      card.insertBefore(w, card.firstChild);
+    } else if (urlParams.get('error') === 'expired') {
+      const card = document.getElementById('step-1');
+      const w = document.createElement('div');
+      w.className = 'warning';
+      w.textContent = '⚠️ Tu pedido expiró (sólo dura 7 días sin OAuth). Llená el form de nuevo.';
+      card.insertBefore(w, card.firstChild);
+    }
+
+    // Toggle del input de carpeta según radio "drive_mode"
+    document.querySelectorAll('input[name="drive_mode"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const isFolder = document.querySelector('input[name="drive_mode"]:checked').value === 'folder';
+        document.getElementById('folder-input-wrapper').style.display = isFolder ? 'block' : 'none';
+        document.getElementById('drive_url').required = isFolder;
+      });
+    });
+
+    // Step 1 → 2
+    document.getElementById('submit1').onclick = async () => {
+      const driveMode = document.querySelector('input[name="drive_mode"]:checked').value;
+      const data = {
+        brand_name: document.getElementById('brand_name').value.trim(),
+        admin_email: document.getElementById('admin_email').value.trim(),
+        preset: document.getElementById('preset').value,
+        drive_mode: driveMode,
+        drive_url: driveMode === 'my_drive'
+          ? 'https://drive.google.com/drive/my-drive'
+          : document.getElementById('drive_url').value.trim(),
+      };
+
+      // Si eligió "custom", agregar los campos custom
+      if (data.preset === 'custom') {
+        data.custom_description = document.getElementById('custom_description').value.trim();
+        data.custom_input = document.getElementById('custom_input').value.trim();
+        data.custom_output = document.getElementById('custom_output').value.trim();
+        data.custom_assignee = document.getElementById('custom_assignee').value.trim();
+      }
+
+      const err = document.getElementById('error1');
+      err.innerHTML = '';
+
+      if (!data.brand_name || !data.admin_email || !data.preset) {
+        err.innerHTML = '<div class="error">Completá todos los campos y elegí un tipo de negocio.</div>';
+        return;
+      }
+      if (driveMode === 'folder' && !data.drive_url) {
+        err.innerHTML = '<div class="error">Pegá el link de la carpeta de Drive o elegí "Toda mi unidad".</div>';
+        return;
+      }
+      if (data.preset === 'custom') {
+        if (!data.custom_description || !data.custom_input || !data.custom_output || !data.custom_assignee) {
+          err.innerHTML = '<div class="error">Completá los 4 campos del negocio custom.</div>';
+          return;
+        }
+      }
+      if (!/^[^@]+@[^@]+\.[^@]+$/.test(data.admin_email)) {
+        err.innerHTML = '<div class="error">Email inválido.</div>';
+        return;
+      }
+      if (driveMode === 'folder' && !/drive\.google\.com\/.*folders\//.test(data.drive_url)) {
+        err.innerHTML = '<div class="error">El link de Drive debe ser de una carpeta (debe contener "/folders/"). Copialo desde la URL de tu carpeta.</div>';
+        return;
+      }
+
+      const btn = document.getElementById('submit1');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        const r = await fetch('/api/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Error');
+
+        // Redirigir a Google OAuth
+        document.getElementById('google-btn').href = j.oauth_url;
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'block';
+        document.getElementById('bar2').classList.add('active');
+      } catch (e) {
+        err.innerHTML = `<div class="error">${e.message}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Continuar →';
+      }
+    };
+
+    document.getElementById('back-to-1').onclick = (e) => {
+      e.preventDefault();
+      document.getElementById('step-2').style.display = 'none';
+      document.getElementById('step-1').style.display = 'block';
+      document.getElementById('bar2').classList.remove('active');
+    };
+  </script>
+</body>
+</html>
