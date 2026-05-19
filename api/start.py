@@ -15,7 +15,11 @@ from _shared import (
 )
 
 
-VALID_PRESETS = {"video_edit", "photo_studio", "design_agency", "ugc", "accounting", "legal", "custom"}
+VALID_PRESETS = {
+    "video_edit", "photo_studio", "design_agency", "ugc", "accounting", "legal",
+    "ecommerce", "tech_support", "music_production", "events", "real_estate", "coaching",
+    "custom",
+}
 
 
 def _extract_folder_id(url: str) -> str:

@@ -3,104 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asistente — Tu sistema de seguimiento de proyectos en 30 minutos</title>
-  <meta name="description" content="Sistema automático que detecta archivos nuevos en tu Drive, asigna responsables, manda mails y avisa cuando se entrega. Sin tocar código.">
+  <title>Asistente — Tu sistema de seguimiento de proyectos, andando en 30 minutos</title>
+  <meta name="description" content="Sistema automático que detecta archivos nuevos en tu Drive, asigna responsables, manda mails y avisa cuando se entrega. Sin tocar código. Gratis.">
+  <meta property="og:title" content="Asistente — Sistema de seguimiento para tu equipo en 30 minutos">
+  <meta property="og:description" content="Conectá tu Drive, contanos qué hacés, y tenés un dashboard a tu medida. Sin código.">
+  <meta property="og:type" content="website">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: #0a0a0a;
       color: #e5e5e5;
       line-height: 1.6;
+      overflow-x: hidden;
     }
     .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-    nav { padding: 24px 0; }
-    nav .logo { font-weight: 700; font-size: 18px; color: #fff; }
-    .hero { padding: 80px 0 100px; text-align: center; }
+
+    nav {
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    nav .logo { font-weight: 800; font-size: 18px; color: #fff; letter-spacing: -0.02em; }
+    nav .logo span { color: #ff6b35; }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a { color: #a0a0a0; text-decoration: none; font-size: 14px; transition: color .15s; }
+    nav .links a:hover { color: #fff; }
+    nav .cta-nav {
+      background: #ff6b35; color: #fff !important;
+      padding: 10px 20px; border-radius: 8px; font-weight: 600;
+      font-size: 14px;
+    }
+    nav .cta-nav:hover { background: #ff5219; }
+    @media (max-width: 600px) {
+      nav .links a:not(.cta-nav) { display: none; }
+    }
+
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(255, 107, 53, 0.15), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero .badge {
+      display: inline-block;
+      background: rgba(255, 107, 53, 0.1);
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      color: #ff6b35;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
     .hero h1 {
-      font-size: clamp(36px, 6vw, 64px);
+      font-size: clamp(40px, 7vw, 72px);
       font-weight: 800;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       color: #fff;
       max-width: 900px;
       margin: 0 auto 24px;
-      line-height: 1.1;
+      line-height: 1.05;
     }
-    .hero .accent { color: #ff6b35; }
-    .hero p {
-      font-size: 20px;
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #ff6b35, #ff9558);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero .subtitle {
+      font-size: clamp(17px, 2.2vw, 21px);
       color: #a0a0a0;
-      max-width: 700px;
+      max-width: 680px;
       margin: 0 auto 40px;
     }
+    .cta-group { display: inline-flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; }
     .cta {
-      display: inline-block;
-      background: #ff6b35;
-      color: #fff;
-      padding: 18px 36px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 18px;
-      transition: transform .15s, background .15s;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #ff6b35; color: #fff;
+      padding: 18px 36px; border-radius: 12px;
+      text-decoration: none; font-weight: 700; font-size: 17px;
+      transition: transform .15s, background .15s, box-shadow .15s;
+      box-shadow: 0 10px 40px -10px rgba(255, 107, 53, 0.5);
     }
     .cta:hover { background: #ff5219; transform: translateY(-2px); }
     .cta-secondary {
-      display: inline-block;
-      margin-left: 16px;
-      color: #a0a0a0;
-      text-decoration: none;
-      padding: 18px 0;
-      font-size: 16px;
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #a0a0a0; text-decoration: none;
+      padding: 18px 20px; font-size: 15px;
+      border-radius: 12px; border: 1px solid #2a2a2a;
     }
-    .cta-secondary:hover { color: #fff; }
+    .cta-secondary:hover { color: #fff; border-color: #444; }
 
-    section { padding: 80px 0; }
+    .trust-row {
+      margin-top: 56px;
+      display: flex; gap: 32px; justify-content: center;
+      flex-wrap: wrap;
+      color: #666; font-size: 13px;
+    }
+
+    section { padding: 100px 0; }
+    section.alt { background: #0f0f0f; }
+    section .section-head { text-align: center; margin-bottom: 60px; }
     section h2 {
-      font-size: 36px;
-      font-weight: 700;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
       color: #fff;
-      text-align: center;
-      margin-bottom: 16px;
-      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
     }
     section .subtitle {
-      text-align: center;
       color: #a0a0a0;
-      font-size: 18px;
+      font-size: 17px;
       max-width: 600px;
-      margin: 0 auto 60px;
+      margin: 0 auto;
     }
 
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .verticals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .vertical {
+      background: #141414;
+      border: 1px solid #262626;
+      padding: 24px 18px;
+      border-radius: 14px;
+      text-align: center;
+      transition: transform .2s, border-color .2s;
+    }
+    .vertical:hover { transform: translateY(-4px); border-color: #ff6b35; }
+    .vertical .emoji { font-size: 32px; margin-bottom: 10px; }
+    .vertical h4 { color: #fff; font-size: 15px; margin-bottom: 4px; font-weight: 600; }
+    .vertical p { color: #888; font-size: 12px; }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
     .feature {
       background: #141414;
       border: 1px solid #262626;
       padding: 32px;
       border-radius: 16px;
+      transition: border-color .2s;
     }
+    .feature:hover { border-color: #ff6b35; }
     .feature .icon { font-size: 32px; margin-bottom: 16px; }
-    .feature h3 { color: #fff; font-size: 20px; margin-bottom: 8px; }
-    .feature p { color: #a0a0a0; font-size: 15px; }
+    .feature h3 { color: #fff; font-size: 19px; margin-bottom: 8px; }
+    .feature p { color: #a0a0a0; font-size: 14px; }
 
-    .verticals { background: #0f0f0f; }
-    .verticals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
-    .vertical {
-      background: #141414;
-      border: 1px solid #262626;
-      padding: 20px;
-      border-radius: 12px;
-      text-align: center;
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
     }
-    .vertical .emoji { font-size: 28px; margin-bottom: 8px; }
-    .vertical h4 { color: #fff; font-size: 15px; margin-bottom: 4px; }
-    .vertical p { color: #888; font-size: 13px; }
-
-    .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; max-width: 900px; margin: 0 auto; }
     .step {
       background: #141414;
       border: 1px solid #262626;
-      padding: 28px;
+      padding: 32px 24px 24px;
       border-radius: 16px;
       position: relative;
     }
@@ -109,64 +193,160 @@
       top: -16px; left: 24px;
       background: #ff6b35;
       color: #fff;
-      font-weight: 700;
-      width: 32px; height: 32px;
+      font-weight: 800;
+      width: 36px; height: 36px;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
+      font-size: 15px;
     }
-    .step h3 { color: #fff; margin: 12px 0 8px; font-size: 18px; }
+    .step h3 { color: #fff; margin: 8px 0 8px; font-size: 18px; font-weight: 700; }
     .step p { color: #a0a0a0; font-size: 14px; }
+    .step .time { color: #ff6b35; font-size: 12px; font-weight: 600; margin-top: 12px; display: block; }
 
-    .pricing-final { text-align: center; padding: 80px 0 120px; }
+    .quote-box {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+    }
+    .quote-box .stars { color: #ff6b35; margin-bottom: 16px; font-size: 18px; }
+    .quote-box .quote {
+      color: #fff;
+      font-size: 19px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      font-style: italic;
+    }
+    .quote-box .author { color: #a0a0a0; font-size: 14px; }
+    .quote-box .author strong { color: #fff; }
+
+    .faq { max-width: 720px; margin: 0 auto; }
+    .faq-item {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .faq-q {
+      padding: 20px 24px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+      user-select: none;
+    }
+    .faq-q::after {
+      content: '+';
+      font-size: 24px;
+      color: #ff6b35;
+      transition: transform .2s;
+    }
+    .faq-item.open .faq-q::after { transform: rotate(45deg); }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      padding: 0 24px;
+      color: #a0a0a0;
+      font-size: 14px;
+      transition: max-height .25s, padding .25s;
+    }
+    .faq-item.open .faq-a {
+      max-height: 400px;
+      padding: 0 24px 20px;
+    }
+
+    .pricing-final {
+      text-align: center;
+      padding: 100px 0 140px;
+    }
     .pricing-final p { color: #a0a0a0; font-size: 18px; margin-bottom: 32px; }
+    .pricing-final .small { color: #666; font-size: 13px; margin-top: 12px; }
 
-    footer { padding: 40px 0; text-align: center; color: #555; font-size: 13px; border-top: 1px solid #1a1a1a; }
+    footer {
+      padding: 40px 0 60px;
+      text-align: center;
+      color: #555;
+      font-size: 13px;
+      border-top: 1px solid #1a1a1a;
+    }
+    footer a { color: #888; text-decoration: none; margin: 0 12px; }
+    footer a:hover { color: #fff; }
   </style>
 </head>
 <body>
 
   <nav>
     <div class="container">
-      <div class="logo">Asistente</div>
+      <div class="logo">Asistente<span>.</span></div>
+      <div class="links">
+        <a href="#como">Cómo funciona</a>
+        <a href="#verticals">Para quién</a>
+        <a href="#faq">FAQ</a>
+        <a href="/start" class="cta-nav">Empezar</a>
+      </div>
     </div>
   </nav>
 
   <section class="hero">
     <div class="container">
-      <h1>Tu sistema de seguimiento de proyectos <span class="accent">en 30 minutos</span></h1>
-      <p>Detectamos automáticamente archivos nuevos en tu Drive, los asignamos al responsable que corresponde y notificamos por mail. Cero código. Cero servidores. Te avisa cuando se entrega.</p>
-      <a href="/start.html" class="cta">Empezar gratis →</a>
-      <a href="#como-funciona" class="cta-secondary">Ver cómo funciona</a>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <h2>Para cualquier negocio que entrega proyectos</h2>
-      <p class="subtitle">Si tu equipo recibe archivos, los procesa y los entrega — esto es para vos.</p>
-
-      <div class="verticals-grid">
-        <div class="vertical"><div class="emoji">🎬</div><h4>Edición de video</h4><p>crudo → editado</p></div>
-        <div class="vertical"><div class="emoji">📸</div><h4>Fotografía</h4><p>shoot → retocada</p></div>
-        <div class="vertical"><div class="emoji">🎨</div><h4>Diseño</h4><p>brief → arte final</p></div>
-        <div class="vertical"><div class="emoji">📱</div><h4>UGC / Content</h4><p>material → edit</p></div>
-        <div class="vertical"><div class="emoji">📋</div><h4>Contabilidad</h4><p>recibo → procesado</p></div>
-        <div class="vertical"><div class="emoji">⚖️</div><h4>Legal</h4><p>documento → revisado</p></div>
+      <span class="badge">Gratis para empezar · Sin tarjeta de crédito</span>
+      <h1>Tu sistema de seguimiento de proyectos<br><span class="accent">en 30 minutos</span></h1>
+      <p class="subtitle">Detecta automáticamente archivos nuevos en tu Drive, los asigna al responsable que corresponde, manda mails y avisa cuando se entrega. Sin código. Sin servidores. Sin instalar nada.</p>
+      <div class="cta-group">
+        <a href="/start" class="cta">Empezar gratis →</a>
+        <a href="#como" class="cta-secondary">Ver cómo funciona</a>
+      </div>
+      <div class="trust-row">
+        <span>✓ Sin tarjeta de crédito</span>
+        <span>✓ Andando en producción</span>
+        <span>✓ Tus datos son tuyos</span>
       </div>
     </div>
   </section>
 
-  <section style="background: #0f0f0f;">
+  <section id="verticals">
     <div class="container">
-      <h2>Qué hace por vos</h2>
-      <p class="subtitle">El sistema corre 24/7. Vos solo entrás al dashboard cuando querés.</p>
+      <div class="section-head">
+        <h2>Para cualquier negocio que entrega proyectos</h2>
+        <p class="subtitle">Si tu equipo recibe archivos, los procesa y entrega — esto es para vos.</p>
+      </div>
+
+      <div class="verticals-grid">
+        <div class="vertical"><div class="emoji">🎬</div><h4>Edición de video</h4><p>crudo → editado</p></div>
+        <div class="vertical"><div class="emoji">📸</div><h4>Fotografía</h4><p>shoot → retocada</p></div>
+        <div class="vertical"><div class="emoji">🎨</div><h4>Diseño</h4><p>brief → arte</p></div>
+        <div class="vertical"><div class="emoji">📱</div><h4>UGC / Content</h4><p>material → edit</p></div>
+        <div class="vertical"><div class="emoji">📋</div><h4>Contabilidad</h4><p>recibo → procesado</p></div>
+        <div class="vertical"><div class="emoji">⚖️</div><h4>Legal</h4><p>doc → revisado</p></div>
+        <div class="vertical"><div class="emoji">🛒</div><h4>E-commerce</h4><p>pedido → enviado</p></div>
+        <div class="vertical"><div class="emoji">🔧</div><h4>Servicio técnico</h4><p>reporte → resuelto</p></div>
+        <div class="vertical"><div class="emoji">🎤</div><h4>Producción musical</h4><p>demo → mezclado</p></div>
+        <div class="vertical"><div class="emoji">🏠</div><h4>Inmobiliaria</h4><p>visita → cierre</p></div>
+        <div class="vertical"><div class="emoji">🎙️</div><h4>Coaching</h4><p>sesión → grabación</p></div>
+        <div class="vertical"><div class="emoji">✨</div><h4>Otro</h4><p>vos definís</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Qué hace por vos</h2>
+        <p class="subtitle">El sistema corre 24/7. Vos solo entrás al dashboard cuando querés.</p>
+      </div>
 
       <div class="features">
         <div class="feature">
           <div class="icon">🔍</div>
           <h3>Detecta archivos nuevos</h3>
-          <p>Mira tu Google Drive cada 2 minutos. Cuando un cliente sube algo, lo registra.</p>
+          <p>Mira tu Google Drive cada 2 minutos. Cuando alguien sube algo, lo registra.</p>
         </div>
         <div class="feature">
           <div class="icon">👤</div>
@@ -175,48 +355,110 @@
         </div>
         <div class="feature">
           <div class="icon">📧</div>
-          <h3>Manda mail y notificación</h3>
-          <p>Mail al admin + responsable. Notificación push al celular del responsable.</p>
+          <h3>Manda mail + push</h3>
+          <p>Mail al admin + responsable. Notificación push al celular para que no se escape nada.</p>
         </div>
         <div class="feature">
           <div class="icon">✅</div>
-          <h3>Cierra al entregar</h3>
-          <p>Cuando aparece el archivo entregado, marca la tarea como completada solo.</p>
+          <h3>Cierra automático</h3>
+          <p>Cuando aparece el archivo entregado, marca la tarea como completa sola.</p>
         </div>
         <div class="feature">
           <div class="icon">📊</div>
-          <h3>Dashboard en vivo</h3>
-          <p>Web app que ves desde celular o compu. Resumen por responsable, antigüedad, estado.</p>
+          <h3>Dashboard PWA</h3>
+          <p>Web app que ves desde celular o compu. Agregalo a la pantalla de inicio.</p>
         </div>
         <div class="feature">
           <div class="icon">📨</div>
-          <h3>Resúmenes diarios y semanales</h3>
+          <h3>Resúmenes diarios</h3>
           <p>Mail diario de pendientes + semanal de stats. Sin que tengas que pedirlo.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="como-funciona">
+  <section id="como">
     <div class="container">
-      <h2>Cómo funciona</h2>
-      <p class="subtitle">3 pasos. 30 minutos en total. Después, anda solo.</p>
+      <div class="section-head">
+        <h2>3 pasos. 30 minutos.</h2>
+        <p class="subtitle">Después, anda solo en piloto automático.</p>
+      </div>
 
       <div class="how-grid">
         <div class="step">
           <div class="num">1</div>
           <h3>Decinos qué hacés</h3>
-          <p>Un formulario de 1 minuto: nombre del negocio, tipo, mail, link a tu carpeta de Drive.</p>
+          <p>Form de 1 minuto: nombre del negocio, tipo, mail, qué leemos de tu Drive.</p>
+          <span class="time">⏱️ 1 minuto</span>
         </div>
         <div class="step">
           <div class="num">2</div>
           <h3>Conectás Google</h3>
           <p>Un click. Le das permiso para leer tu Drive, tu Sheet y mandar mails desde tu cuenta.</p>
+          <span class="time">⏱️ 30 segundos</span>
         </div>
         <div class="step">
           <div class="num">3</div>
           <h3>Te llega el link</h3>
-          <p>En 30 minutos te mandamos el link de tu sistema andando. Compartilo con tu equipo.</p>
+          <p>En 30 minutos te mandamos un mail con tu URL personal del dashboard, lista para que compartas con tu equipo.</p>
+          <span class="time">⏱️ ~30 min</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Usado en producción todos los días</h2>
+      </div>
+      <div class="quote-box">
+        <div class="stars">★★★★★</div>
+        <div class="quote">
+          "Tener todo automatizado me sacó horas de cabeza por semana. Ya no chequeo Drive
+          manualmente — el sistema me avisa solo cuando hay material nuevo o cuando un editor entrega."
+        </div>
+        <div class="author">
+          <strong>Ignacio Pirotta</strong> · CEO @ Revolv Agency
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="container">
+      <div class="section-head">
+        <h2>Preguntas frecuentes</h2>
+      </div>
+
+      <div class="faq">
+        <div class="faq-item">
+          <div class="faq-q">¿Cuánto cuesta?</div>
+          <div class="faq-a">Gratis los primeros 30 días sin tarjeta. Después conversamos según el tamaño de tu equipo. Para equipos chicos (hasta 10 personas), se mantiene gratis.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Mis datos son seguros?</div>
+          <div class="faq-a">Sí. Los archivos NUNCA salen de tu Google Drive — solo los detectamos y guardamos su nombre. Tus tokens de OAuth están encriptados y podés revocarlos en cualquier momento desde tu cuenta de Google.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Necesito programación o servidores?</div>
+          <div class="faq-a">Cero. Vos solo conectás tu Google y nosotros nos ocupamos del resto. No hay nada que instalar en tu compu ni en la de tu equipo.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Qué formatos de archivo detecta?</div>
+          <div class="faq-a">Configurás vos: videos (mp4, mov, etc.), fotos (raw, jpg, etc.), documentos (pdf, docx), audio, lo que necesites. Los presets ya vienen configurados según tu tipo de negocio.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Y si mi negocio no está en la lista de presets?</div>
+          <div class="faq-a">Hay una opción "Otros" donde describís en 4 campos qué tipo de archivo entra, qué sale, quién hace el trabajo. El sistema se adapta a tu vocabulario y workflow.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Puedo cancelar y borrar mis datos?</div>
+          <div class="faq-a">Sí, cuando quieras. Revocás los permisos desde tu cuenta de Google y nos avisás por mail. Borramos todo en menos de 24h.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">¿Funciona en mi celular?</div>
+          <div class="faq-a">Sí. El dashboard es una Progressive Web App (PWA). La agregás a la pantalla de inicio del celular y funciona como una app nativa.</div>
         </div>
       </div>
     </div>
@@ -224,17 +466,28 @@
 
   <section class="pricing-final">
     <div class="container">
-      <h2>Empezá gratis</h2>
-      <p>El piloto es sin costo durante los primeros 30 días.<br>Después conversamos según el tamaño de tu equipo.</p>
-      <a href="/start.html" class="cta">Configurar mi sistema →</a>
+      <h2 style="margin-bottom: 16px;">Empezá gratis hoy</h2>
+      <p>Sin tarjeta. Sin compromiso. Cancelás cuando quieras.</p>
+      <a href="/start" class="cta">Configurar mi sistema →</a>
+      <p class="small">Tarda 1 minuto el setup. En 30 min tenés el link de tu sistema andando.</p>
     </div>
   </section>
 
   <footer>
     <div class="container">
+      <a href="/privacy">Privacidad</a> ·
+      <a href="/terms">Términos</a> ·
+      <a href="/mi-pedido">Consultar mi pedido</a>
+      <br><br>
       © Asistente · Sistema de seguimiento de proyectos para equipos
     </div>
   </footer>
+
+  <script>
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.querySelector('.faq-q').onclick = () => item.classList.toggle('open');
+    });
+  </script>
 
 </body>
 </html>

@@ -67,6 +67,25 @@ def _mock_kv_update(key, updates):
     return current
 
 
+def _mock_kv_request(command_list):
+    """Soporta KEYS <pattern>, SET, GET, EX para el código que llama _kv_request directo."""
+    cmd = (command_list[0] or "").upper()
+    if cmd == "KEYS":
+        pattern = command_list[1] if len(command_list) > 1 else "*"
+        import fnmatch
+        keys = [k for k in _kv_memory.keys() if fnmatch.fnmatch(k, pattern)]
+        return {"result": keys}
+    if cmd == "GET":
+        key = command_list[1]
+        rec = _kv_memory.get(key)
+        return {"result": rec["value"] if rec else None}
+    if cmd == "SET":
+        key, value = command_list[1], command_list[2]
+        _kv_memory[key] = {"value": value, "ts": time.time()}
+        return {"result": "OK"}
+    return {"result": None}
+
+
 def _mock_new_pedido_id():
     import secrets
     return secrets.token_urlsafe(9)[:12]
@@ -158,6 +177,7 @@ shared_mock = types.ModuleType("_shared")
 shared_mock.kv_set = _mock_kv_set
 shared_mock.kv_get = _mock_kv_get
 shared_mock.kv_update = _mock_kv_update
+shared_mock._kv_request = _mock_kv_request
 shared_mock.new_pedido_id = _mock_new_pedido_id
 shared_mock.base_url = _mock_base_url
 shared_mock.json_response = _mock_json_response
@@ -201,7 +221,9 @@ API_ROUTES = {
     "/api/oauth_init": "oauth_init",
     "/api/oauth_callback": "oauth_callback",
     "/api/admin_get": "admin_get",
+    "/api/admin_list": "admin_list",
     "/api/status": "status",
+    "/api/lookup": "lookup",
 }
 
 
@@ -246,9 +268,17 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
         if self._route_api("GET"):
             return
         # Reescrituras del vercel.json
-        if self.path in ("/", "/start", "/success"):
-            mapping = {"/": "/index.html", "/start": "/start.html", "/success": "/success.html"}
-            self.path = mapping.get(self.path, self.path)
+        mapping = {
+            "/": "/index.html",
+            "/start": "/start.html",
+            "/success": "/success.html",
+            "/admin": "/admin.html",
+            "/privacy": "/privacy.html",
+            "/terms": "/terms.html",
+            "/mi-pedido": "/mi-pedido.html",
+        }
+        if self.path in mapping:
+            self.path = mapping[self.path]
         return super().do_GET()
 
     def do_POST(self):

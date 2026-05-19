@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidad · Asistente</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #d0d0d0; max-width: 760px; margin: 0 auto; padding: 60px 24px; line-height: 1.7; }
+    h1 { color: #fff; font-size: 32px; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .meta { color: #666; font-size: 13px; margin-bottom: 40px; }
+    h2 { color: #fff; font-size: 20px; margin: 32px 0 12px; }
+    p, li { font-size: 15px; }
+    ul { padding-left: 24px; margin: 12px 0; }
+    a { color: #ff6b35; }
+    .back { color: #888; text-decoration: none; margin-bottom: 24px; display: inline-block; }
+    .back:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <a href="/" class="back">← Volver al home</a>
+
+  <h1>Política de Privacidad</h1>
+  <div class="meta">Última actualización: 17 de mayo de 2026</div>
+
+  <p>Esta política describe cómo Asistente (en adelante, "el Servicio") recolecta, usa y protege la información de los usuarios que se registran a través de este sitio.</p>
+
+  <h2>1. Información que recolectamos</h2>
+  <ul>
+    <li><strong>Datos del formulario:</strong> nombre del negocio, email del admin, tipo de negocio, link de la carpeta de Drive que querés monitorear.</li>
+    <li><strong>Permisos de Google (vía OAuth):</strong> acceso de solo-lectura a archivos de Google Drive y Google Sheets, y permiso para enviar mails desde Gmail en nombre del usuario. Estos permisos se otorgan explícitamente al hacer click en "Conectar Google".</li>
+    <li><strong>Datos generados por el sistema:</strong> nombres de archivos detectados, fechas de detección/entrega, asignaciones a responsables. Esto se guarda en una base de datos privada de cada cliente.</li>
+  </ul>
+
+  <h2>2. Qué NO recolectamos</h2>
+  <ul>
+    <li>El contenido de los archivos de Drive (videos, fotos, documentos) NUNCA se descarga ni se almacena en nuestros servidores.</li>
+    <li>Datos personales identificables más allá del email del admin que se registró.</li>
+    <li>Información de tarjetas de crédito (el servicio es gratuito durante el período piloto).</li>
+  </ul>
+
+  <h2>3. Uso de la información</h2>
+  <p>Usamos la información exclusivamente para:</p>
+  <ul>
+    <li>Detectar archivos nuevos en tu Google Drive según la configuración que cargaste.</li>
+    <li>Enviar notificaciones por mail a las direcciones que indicaste.</li>
+    <li>Generar el dashboard personalizado de tu negocio.</li>
+    <li>Mantener el funcionamiento técnico del servicio.</li>
+  </ul>
+  <p><strong>No vendemos, alquilamos ni compartimos tus datos con terceros.</strong></p>
+
+  <h2>4. Almacenamiento y seguridad</h2>
+  <ul>
+    <li>Los tokens de OAuth se almacenan encriptados en variables de entorno seguras (Vercel Environment Variables).</li>
+    <li>La base de datos de cada cliente vive en un repositorio privado de GitHub al que solo tiene acceso el dueño del sistema.</li>
+    <li>Las comunicaciones entre tu navegador y nuestros servidores usan HTTPS (TLS 1.2+).</li>
+  </ul>
+
+  <h2>5. Tus derechos</h2>
+  <p>En cualquier momento podés:</p>
+  <ul>
+    <li><strong>Revocar permisos:</strong> entrá a <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a> y revocá el acceso a "Asistente".</li>
+    <li><strong>Solicitar borrado de tus datos:</strong> escribinos a <a href="mailto:nacho.rodriguezpirotta@gmail.com">nacho.rodriguezpirotta@gmail.com</a>. Borramos todo en menos de 24 horas.</li>
+    <li><strong>Exportar tus datos:</strong> podés descargar tu base de datos del repositorio privado de tu cliente cuando quieras.</li>
+  </ul>
+
+  <h2>6. Uso limitado de datos de Google</h2>
+  <p>El uso que hace Asistente de la información recibida desde las APIs de Google se adhiere a la <a href="https://developers.google.com/terms/api-services-user-data-policy#additional_requirements_for_specific_api_scopes" target="_blank">Google API Services User Data Policy</a>, incluyendo los requisitos de Uso Limitado.</p>
+  <p>Específicamente:</p>
+  <ul>
+    <li>Solo usamos los datos para proveer las funcionalidades visibles del producto (detectar archivos, mandar notificaciones).</li>
+    <li>No transferimos los datos a terceros excepto cuando es necesario para proveer la funcionalidad del producto o para cumplir con la ley.</li>
+    <li>No usamos los datos para publicidad.</li>
+    <li>No permitimos que humanos lean los datos a menos que el usuario haya dado consentimiento específico, o sea necesario por razones de seguridad o legales.</li>
+  </ul>
+
+  <h2>7. Cookies</h2>
+  <p>Este sitio NO usa cookies de tracking. Solo usa <code>localStorage</code> para guardar tu token de admin si entrás al panel de administración.</p>
+
+  <h2>8. Cambios a esta política</h2>
+  <p>Si actualizamos esta política, te avisaremos por mail si la modificación es significativa. La fecha de última actualización siempre está al inicio del documento.</p>
+
+  <h2>9. Contacto</h2>
+  <p>Para cualquier consulta sobre privacidad: <a href="mailto:nacho.rodriguezpirotta@gmail.com">nacho.rodriguezpirotta@gmail.com</a></p>
+</body>
+</html>

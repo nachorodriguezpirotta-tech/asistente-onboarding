@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · Asistente Onboarding</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { color: #fff; font-size: 26px; margin-bottom: 4px; letter-spacing: -0.01em; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .stat .label { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .stat .value { color: #fff; font-size: 28px; font-weight: 700; }
+    .stat.warn .value { color: #ffa500; }
+    .stat.good .value { color: #4caf50; }
+    .stat.danger .value { color: #ff6b35; }
+
+    .toolbar {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar input, .toolbar select {
+      background: #141414; border: 1px solid #262626; color: #fff;
+      padding: 8px 12px; border-radius: 6px; font-size: 14px;
+      font-family: inherit;
+    }
+    .toolbar input { flex: 1; min-width: 200px; }
+    button {
+      background: #ff6b35; color: #fff; border: none;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer;
+      font-size: 14px; font-weight: 600;
+      font-family: inherit;
+    }
+    button:hover { background: #ff5219; }
+    button.secondary {
+      background: #262626; color: #d0d0d0;
+    }
+    button.secondary:hover { background: #333; }
+
+    table {
+      width: 100%;
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      overflow: hidden;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 13px;
+      border-bottom: 1px solid #262626;
+    }
+    th { background: #0a0a0a; color: #888; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: #1a1a1a; }
+    td.brand { color: #fff; font-weight: 600; }
+    td .small { color: #666; font-size: 11px; display: block; margin-top: 2px; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge.pending_oauth { background: rgba(255, 165, 0, 0.15); color: #ffa500; }
+    .badge.oauth_done { background: rgba(33, 150, 243, 0.15); color: #4ba0f5; }
+    .badge.provisioning { background: rgba(156, 39, 176, 0.15); color: #c66ce0; }
+    .badge.deployed { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+    .badge.failed { background: rgba(244, 67, 54, 0.15); color: #f44336; }
+
+    .actions { display: flex; gap: 6px; }
+    .actions a, .actions button {
+      padding: 5px 10px; font-size: 12px;
+      background: #262626; color: #d0d0d0; border: 1px solid #333;
+      border-radius: 5px; text-decoration: none; cursor: pointer;
+    }
+    .actions a:hover, .actions button:hover { background: #333; color: #fff; }
+    .actions .copy-cmd { background: #ff6b35; color: #fff; border-color: #ff6b35; }
+
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #666;
+    }
+    .empty h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
+
+    .auth-card {
+      max-width: 400px;
+      margin: 100px auto;
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 16px;
+      padding: 32px;
+    }
+    .auth-card h2 { color: #fff; margin-bottom: 16px; }
+    .auth-card p { color: #888; margin-bottom: 16px; font-size: 14px; }
+    .auth-card input { width: 100%; margin-bottom: 12px; padding: 12px; background: #0a0a0a; border: 1px solid #2a2a2a; color: #fff; border-radius: 8px; font-family: inherit; }
+    .auth-card button { width: 100%; padding: 12px; }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a3a1a; color: #b0e0b0;
+      border: 1px solid #2a5a2a; border-radius: 8px;
+      padding: 12px 18px; font-size: 14px;
+      animation: slideIn .25s;
+    }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- Pantalla de auth -->
+  <div id="auth" class="auth-card">
+    <h2>Admin · Asistente Onboarding</h2>
+    <p>Pegá tu <code>ADMIN_TOKEN</code> (la misma var de Vercel):</p>
+    <input type="password" id="token-input" placeholder="dev_admin_token_local">
+    <button id="auth-btn">Entrar</button>
+    <div id="auth-err" style="color:#ff8080; font-size:13px; margin-top:12px;"></div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="container" style="display:none;">
+    <h1>Pedidos</h1>
+    <div class="subtitle">Admin · Asistente Onboarding</div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Buscar por nombre, email...">
+      <select id="filter-status">
+        <option value="">Todos los estados</option>
+        <option value="pending_oauth">Pending OAuth</option>
+        <option value="oauth_done">OAuth done (esperando provision)</option>
+        <option value="provisioning">Provisionando</option>
+        <option value="deployed">Deployed</option>
+        <option value="failed">Failed</option>
+      </select>
+      <button class="secondary" id="refresh">↻ Refresh</button>
+      <button class="secondary" id="logout">Logout</button>
+    </div>
+
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Email</th>
+          <th>Tipo</th>
+          <th>Status</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body">
+        <tr><td colspan="7" class="empty"><h3>Cargando…</h3></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let TOKEN = localStorage.getItem('admin_token') || '';
+    let DATA = [];
+
+    function authenticate(tok) {
+      TOKEN = tok;
+      localStorage.setItem('admin_token', tok);
+      document.getElementById('auth').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      load();
+    }
+
+    document.getElementById('auth-btn').onclick = () => {
+      const tok = document.getElementById('token-input').value.trim();
+      if (!tok) return;
+      authenticate(tok);
+    };
+    document.getElementById('token-input').onkeydown = (e) => {
+      if (e.key === 'Enter') document.getElementById('auth-btn').click();
+    };
+
+    document.getElementById('logout').onclick = () => {
+      localStorage.removeItem('admin_token');
+      location.reload();
+    };
+
+    async function load() {
+      const r = await fetch(`/api/admin_list?t=${encodeURIComponent(TOKEN)}`);
+      if (r.status === 403) {
+        localStorage.removeItem('admin_token');
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('auth-err').textContent = 'Token inválido';
+        return;
+      }
+      const j = await r.json();
+      DATA = j.pedidos || [];
+      render();
+    }
+
+    function render() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const filterStatus = document.getElementById('filter-status').value;
+
+      let filtered = DATA.filter(p => {
+        if (filterStatus && p.status !== filterStatus) return false;
+        if (search) {
+          const s = (p.brand_name + ' ' + p.admin_email + ' ' + p.google_email).toLowerCase();
+          if (!s.includes(search)) return false;
+        }
+        return true;
+      });
+
+      // Stats
+      const stats = {
+        total: DATA.length,
+        pending: DATA.filter(p => p.status === 'oauth_done').length,
+        deployed: DATA.filter(p => p.status === 'deployed').length,
+        failed: DATA.filter(p => p.status === 'failed').length,
+      };
+      document.getElementById('stats').innerHTML = `
+        <div class="stat"><div class="label">Total pedidos</div><div class="value">${stats.total}</div></div>
+        <div class="stat danger"><div class="label">Esperando que les deployes</div><div class="value">${stats.pending}</div></div>
+        <div class="stat good"><div class="label">Deployados</div><div class="value">${stats.deployed}</div></div>
+        <div class="stat warn"><div class="label">Failed</div><div class="value">${stats.failed}</div></div>
+      `;
+
+      // Tabla
+      if (filtered.length === 0) {
+        document.getElementById('tbl-body').innerHTML = `<tr><td colspan="7" class="empty"><h3>No hay pedidos${search || filterStatus ? ' que coincidan' : ' todavía'}</h3></td></tr>`;
+        return;
+      }
+
+      const rows = filtered.map(p => {
+        const created = p.created_at ? new Date(p.created_at).toLocaleString('es-AR') : '—';
+        const actions = [];
+        if (p.status === 'oauth_done') {
+          actions.push(`<button class="copy-cmd" onclick="copyProvision('${p.id}')">📋 Copiar comando provision</button>`);
+        }
+        if (p.dashboard_url) {
+          actions.push(`<a href="${p.dashboard_url}" target="_blank">🔗 Dashboard</a>`);
+        }
+        actions.push(`<button onclick="copyId('${p.id}')">ID</button>`);
+        return `
+          <tr>
+            <td><code style="color:#888;font-size:11px;">${p.id}</code></td>
+            <td class="brand">${escapeHtml(p.brand_name)}<span class="small">${escapeHtml(p.google_email || '—')}</span></td>
+            <td>${escapeHtml(p.admin_email)}</td>
+            <td>${escapeHtml(p.preset)}</td>
+            <td><span class="badge ${p.status}">${p.status}</span></td>
+            <td>${created}</td>
+            <td class="actions">${actions.join('')}</td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('tbl-body').innerHTML = rows;
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    function toast(msg) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    window.copyProvision = (id) => {
+      const cmd = `python3 provision.py ${id}`;
+      navigator.clipboard.writeText(cmd);
+      toast(`Comando copiado: ${cmd}`);
+    };
+    window.copyId = (id) => {
+      navigator.clipboard.writeText(id);
+      toast(`ID copiado: ${id}`);
+    };
+
+    document.getElementById('refresh').onclick = load;
+    document.getElementById('search').oninput = render;
+    document.getElementById('filter-status').onchange = render;
+
+    if (TOKEN) authenticate(TOKEN);
+  </script>
+</body>
+</html>

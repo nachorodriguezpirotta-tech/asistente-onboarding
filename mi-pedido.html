@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultar mi pedido · Asistente</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; min-height: 100vh; padding: 60px 24px; }
+    .container { max-width: 520px; margin: 0 auto; }
+    h1 { color: #fff; font-size: 28px; margin-bottom: 8px; letter-spacing: -0.01em; text-align: center; }
+    .subtitle { color: #888; text-align: center; margin-bottom: 32px; }
+    .card { background: #141414; border: 1px solid #262626; border-radius: 16px; padding: 28px; }
+    label { display: block; color: #d0d0d0; font-size: 14px; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      background: #0a0a0a; border: 1px solid #2a2a2a; color: #fff;
+      padding: 12px 14px; border-radius: 8px;
+      font-size: 15px; font-family: inherit;
+    }
+    input:focus { outline: none; border-color: #ff6b35; }
+    button {
+      width: 100%;
+      background: #ff6b35; color: #fff; border: none;
+      padding: 14px; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      margin-top: 16px; font-family: inherit;
+    }
+    button:hover { background: #ff5219; }
+
+    .result { display: none; margin-top: 24px; }
+    .result.show { display: block; }
+    .pedido-card {
+      background: #0a0a0a; border: 1px solid #2a2a2a;
+      border-radius: 10px; padding: 16px; margin-bottom: 10px;
+    }
+    .pedido-card .brand { color: #fff; font-weight: 700; font-size: 16px; }
+    .pedido-card .meta { color: #888; font-size: 12px; margin: 4px 0 10px; }
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+    }
+    .badge.pending_oauth { background: rgba(255, 165, 0, 0.15); color: #ffa500; }
+    .badge.oauth_done { background: rgba(33, 150, 243, 0.15); color: #4ba0f5; }
+    .badge.provisioning { background: rgba(156, 39, 176, 0.15); color: #c66ce0; }
+    .badge.deployed { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+    .badge.failed { background: rgba(244, 67, 54, 0.15); color: #f44336; }
+    .dashboard-link {
+      display: inline-block; margin-top: 8px;
+      background: #ff6b35; color: #fff; padding: 6px 12px;
+      border-radius: 6px; font-size: 12px; text-decoration: none; font-weight: 600;
+    }
+    .empty { text-align: center; padding: 32px; color: #666; }
+    .empty a { color: #ff6b35; text-decoration: none; }
+    .back { color: #888; text-decoration: none; display: block; text-align: center; margin-top: 24px; font-size: 14px; }
+    .back:hover { color: #fff; }
+    .error { background: #2a1a1a; color: #ff8080; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Consultar mi pedido</h1>
+    <div class="subtitle">Ingresá el email con el que te registraste</div>
+
+    <div class="card">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="tu@email.com">
+
+      <label style="margin-top: 12px;">o ID del pedido (opcional)</label>
+      <input type="text" id="pedido-id" placeholder="abc123def...">
+
+      <div id="err"></div>
+      <button id="consult-btn">Consultar</button>
+    </div>
+
+    <div class="result" id="result">
+      <h3 style="color:#fff; margin: 24px 0 12px; font-size: 16px;">Tus pedidos</h3>
+      <div id="pedidos-list"></div>
+    </div>
+
+    <a href="/" class="back">← Volver al home</a>
+  </div>
+
+  <script>
+    document.getElementById('consult-btn').onclick = async () => {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const id = document.getElementById('pedido-id').value.trim();
+      const err = document.getElementById('err');
+      err.innerHTML = '';
+
+      if (!email && !id) {
+        err.innerHTML = '<div class="error">Ingresá un email o un ID</div>';
+        return;
+      }
+
+      try {
+        if (id) {
+          // Consulta directa por ID (endpoint público)
+          const r = await fetch(`/api/status?id=${encodeURIComponent(id)}`);
+          if (!r.ok) { const j = await r.json(); throw new Error(j.error || 'No encontrado'); }
+          const p = await r.json();
+          renderPedidos([p]);
+        } else {
+          // Consulta por email
+          const r = await fetch(`/api/lookup?email=${encodeURIComponent(email)}`);
+          if (!r.ok) { const j = await r.json(); throw new Error(j.error || 'Error'); }
+          const j = await r.json();
+          renderPedidos(j.pedidos || []);
+        }
+      } catch (e) {
+        err.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    };
+
+    function renderPedidos(pedidos) {
+      const list = document.getElementById('pedidos-list');
+      document.getElementById('result').classList.add('show');
+      if (!pedidos.length) {
+        list.innerHTML = '<div class="empty">No encontramos pedidos con ese email.<br><a href="/start">¿Querés empezar?</a></div>';
+        return;
+      }
+      list.innerHTML = pedidos.map(p => `
+        <div class="pedido-card">
+          <div class="brand">${escapeHtml(p.brand_name || p.id)}</div>
+          <div class="meta">ID: <code>${p.id}</code> · Creado: ${p.created_at ? new Date(p.created_at).toLocaleString('es-AR') : '—'}</div>
+          <span class="badge ${p.status}">${p.status_label || p.status}</span>
+          ${p.dashboard_url ? `<br><a href="${p.dashboard_url}" target="_blank" class="dashboard-link">Abrir mi dashboard →</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    document.getElementById('email').onkeydown = (e) => {
+      if (e.key === 'Enter') document.getElementById('consult-btn').click();
+    };
+  </script>
+
+</body>
+</html>

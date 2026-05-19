@@ -3,6 +3,10 @@
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/start", "destination": "/start.html" },
-    { "source": "/success", "destination": "/success.html" }
+    { "source": "/success", "destination": "/success.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/mi-pedido", "destination": "/mi-pedido.html" }
   ]
 }

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — No encontrado · Asistente</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a; color: #e5e5e5;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px;
+    }
+    .card {
+      max-width: 480px;
+      text-align: center;
+    }
+    .big {
+      font-size: 96px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff6b35, #ff9558);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.04em;
+    }
+    h1 { color: #fff; font-size: 28px; margin: 16px 0 8px; letter-spacing: -0.01em; }
+    p { color: #a0a0a0; font-size: 16px; margin-bottom: 32px; }
+    a {
+      display: inline-block;
+      background: #ff6b35; color: #fff;
+      padding: 14px 28px; border-radius: 10px;
+      text-decoration: none; font-weight: 700; font-size: 15px;
+    }
+    a:hover { background: #ff5219; }
+    a.secondary {
+      background: transparent;
+      color: #a0a0a0;
+      border: 1px solid #2a2a2a;
+      margin-left: 8px;
+    }
+    a.secondary:hover { color: #fff; border-color: #444; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="big">404</div>
+    <h1>No encontramos lo que buscabas</h1>
+    <p>La página que intentás abrir no existe o expiró.</p>
+    <a href="/">Volver al inicio</a>
+    <a href="/start" class="secondary">Empezar →</a>
+  </div>
+</body>
+</html>
