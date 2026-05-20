@@ -347,9 +347,12 @@ def main():
 
     # ─── 6. Deploy a Vercel ──────────────────────────────────────────────────
     step(6, TOTAL, "Deploy a Vercel")
-    vercel_cmd = ["vercel"] if shutil.which("vercel") else ["npx", "vercel"]
+    vercel_bin = ["vercel"] if shutil.which("vercel") else ["npx", "vercel"]
+    # En CI siempre pasamos --token, en local vercel CLI ya está logueado
+    vercel_token = os.environ.get("VERCEL_TOKEN", "")
+    vercel_cmd = vercel_bin + ([f"--token={vercel_token}"] if vercel_token else [])
     if dry_run:
-        print(f"  [DRY-RUN] {' '.join(vercel_cmd)} link + env add + --prod")
+        print(f"  [DRY-RUN] {' '.join(vercel_bin)} link + env add + --prod")
     else:
         run(vercel_cmd + ["link", "--yes", "--project", repo_name], cwd=client_dir)
         for k, v in env_vars.items():
