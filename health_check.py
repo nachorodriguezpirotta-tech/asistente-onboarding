@@ -154,7 +154,7 @@ def check_github_secrets():
     with urllib.request.urlopen(req, timeout=5) as r:
         d = json.loads(r.read())
     names = {s["name"] for s in d.get("secrets", [])}
-    required = {"GITHUB_PAT", "VERCEL_TOKEN", "ADMIN_TOKEN"}
+    required = {"PROVISION_GH_PAT", "VERCEL_TOKEN", "ADMIN_TOKEN"}
     missing = required - names
     if missing:
         return (False, f"faltan secrets: {', '.join(missing)}")

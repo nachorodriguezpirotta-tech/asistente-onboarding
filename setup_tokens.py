@@ -66,7 +66,7 @@ def _save_env(env: dict):
     print(f"  ✓ .env actualizado")
 
 
-def verify_github_pat(token: str) -> dict | None:
+def verify_github_pat(token: str) -> "dict|None":
     """Verifica que el PAT funciona. Devuelve info del user si OK."""
     req = urllib.request.Request("https://api.github.com/user")
     req.add_header("Authorization", f"Bearer {token}")
@@ -79,7 +79,7 @@ def verify_github_pat(token: str) -> dict | None:
         return None
 
 
-def verify_vercel_token(token: str) -> dict | None:
+def verify_vercel_token(token: str) -> "dict|None":
     """Verifica que el Vercel token funciona."""
     req = urllib.request.Request("https://api.vercel.com/v2/user")
     req.add_header("Authorization", f"Bearer {token}")
@@ -183,7 +183,8 @@ def main():
     # ─── Setear en GitHub Secrets ──────────────────────────────────────
     print(f"\n[3/4] Configurando GitHub Secrets en {args.repo}…")
     secrets_to_set = {
-        "GITHUB_PAT": github_pat,
+        # GitHub no permite secrets que empiecen con GITHUB_, usamos PROVISION_GH_PAT
+        "PROVISION_GH_PAT": github_pat,
         "VERCEL_TOKEN": vercel_token,
         "ONBOARDING_URL": env.get("ONBOARDING_URL", "https://asistente-onboarding.vercel.app"),
         "ADMIN_TOKEN": env.get("ADMIN_TOKEN", env.get("ONBOARDING_ADMIN_TOKEN", "")),
