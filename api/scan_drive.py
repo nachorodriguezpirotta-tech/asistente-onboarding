@@ -229,16 +229,21 @@ class handler(BaseHTTPRequestHandler):
         errors = []
         scanned = 0
 
+        completed_count = 0
+
         for assignment in assignments:
             folder_id = assignment["folder_id"]
             folder_name = assignment["folder_name"]
             editor_name = assignment["editor_name"]
+            output_folder_id = assignment.get("output_folder_id")
+            output_folder_name = assignment.get("output_folder_name", "")
 
             # Resolver alias del nombre de carpeta si aplica
             real_client_name = aliases_map.get(folder_name.lower(), folder_name)
 
+            # ── 1. Escanear CRUDOS (carpeta input) ──
             try:
-                files = list_files_in_folder(access_token, folder_id)
+                input_files = list_files_in_folder(access_token, folder_id)
             except urllib.error.HTTPError as e:
                 errors.append(f"{folder_name}: HTTP {e.code}")
                 continue
@@ -248,7 +253,7 @@ class handler(BaseHTTPRequestHandler):
 
             scanned += 1
 
-            # Buscar la task activa de este cliente+editor (si hay)
+            # Buscar task activa de este cliente+editor
             existing_task = None
             for t in tasks:
                 if (t.get("client", "").lower() == real_client_name.lower()
@@ -257,51 +262,81 @@ class handler(BaseHTTPRequestHandler):
                     existing_task = t
                     break
 
-            new_files_in_folder = 0
-            for f in files:
+            new_inputs = 0
+            for f in input_files:
                 if f["id"] in known_files:
                     continue
                 if not has_valid_extension(f["name"]):
-                    known_files.add(f["id"])  # ignorar pero no re-procesar
+                    known_files.add(f["id"])
                     continue
-                # Marcar como conocido
                 known_files.add(f["id"])
-                new_files_in_folder += 1
+                new_inputs += 1
 
-            if new_files_in_folder == 0:
+            # ── 2. Escanear EDITADOS (carpeta output, si existe) ──
+            new_outputs = 0
+            if output_folder_id:
+                try:
+                    output_files = list_files_in_folder(access_token, output_folder_id)
+                    scanned += 1
+                    for f in output_files:
+                        if f["id"] in known_files:
+                            continue
+                        if not has_valid_extension(f["name"]):
+                            known_files.add(f["id"])
+                            continue
+                        known_files.add(f["id"])
+                        new_outputs += 1
+                except Exception as e:
+                    errors.append(f"{output_folder_name}: {e}")
+
+            # ── Lógica de creación / decremento ──
+            if new_inputs == 0 and new_outputs == 0:
                 continue
 
-            # Crear o updatear task
-            is_new_task = False
-            if existing_task:
-                # Sumar al pending_count existente
-                existing_task["pending_count"] = (existing_task.get("pending_count") or 1) + new_files_in_folder
-                task_to_notify = existing_task
-            else:
-                task_to_notify = {
-                    "id": _secrets.token_urlsafe(6),
-                    "client": real_client_name,
-                    "title": real_client_name,
-                    "assignee": editor_name,
-                    "notes": f"📁 Auto-detectado en carpeta «{folder_name}»",
-                    "urgent": False,
-                    "pending_count": new_files_in_folder,
-                    "status": "pending",
-                    "created_at": now_iso(),
-                    "auto_created": True,
-                    "source_folder_id": folder_id,
-                }
-                tasks.append(task_to_notify)
-                new_tasks_count += 1
-                is_new_task = True
+            # Si hay crudos nuevos → crear/sumar task
+            if new_inputs > 0:
+                if existing_task:
+                    existing_task["pending_count"] = (existing_task.get("pending_count") or 1) + new_inputs
+                    task_to_notify = existing_task
+                    is_new_task = False
+                else:
+                    task_to_notify = {
+                        "id": _secrets.token_urlsafe(6),
+                        "client": real_client_name,
+                        "title": real_client_name,
+                        "assignee": editor_name,
+                        "notes": "",  # SIN nota automática — el cliente la agrega si quiere
+                        "urgent": False,
+                        "pending_count": new_inputs,
+                        "status": "pending",
+                        "created_at": now_iso(),
+                        "auto_created": True,
+                        "source_folder_id": folder_id,
+                    }
+                    tasks.append(task_to_notify)
+                    new_tasks_count += 1
+                    is_new_task = True
+                    existing_task = task_to_notify
 
-            # ── Mandar mail al editor ──
-            editor_obj = editors_by_name.get(editor_name)
-            if editor_obj and editor_obj.get("email") and not editor_obj.get("on_vacation"):
-                try:
-                    notify_editor_new_task(tenant, editor_obj, task_to_notify, access_token, folder_id)
-                except Exception as e:
-                    errors.append(f"mail a {editor_name}: {e}")
+                # Mandar mail al editor (solo si hay crudos nuevos)
+                editor_obj = editors_by_name.get(editor_name)
+                if editor_obj and editor_obj.get("email") and not editor_obj.get("on_vacation"):
+                    try:
+                        notify_editor_new_task(tenant, editor_obj, task_to_notify, access_token, folder_id)
+                    except Exception as e:
+                        errors.append(f"mail a {editor_name}: {e}")
+
+            # Si hay editados nuevos → reducir count
+            if new_outputs > 0 and existing_task:
+                current = existing_task.get("pending_count") or 1
+                new_count = max(0, current - new_outputs)
+                if new_count == 0:
+                    existing_task["status"] = "done"
+                    existing_task["completed_at"] = now_iso()
+                    existing_task["pending_count"] = 0
+                    completed_count += 1
+                else:
+                    existing_task["pending_count"] = new_count
 
         # Guardar
         kv_set(f"tenant:{tenant_id}:known_files", list(known_files))
@@ -310,6 +345,7 @@ class handler(BaseHTTPRequestHandler):
         return json_response(self, {
             "ok": True,
             "new_tasks": new_tasks_count,
+            "completed_tasks": completed_count,
             "scanned_folders": scanned,
             "total_known_files": len(known_files),
             "errors": errors,

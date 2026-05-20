@@ -371,7 +371,21 @@
                     <div id="folder-picker-step2" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
                         <label style="color: var(--text); font-size: 13px; display: block; margin-bottom: 6px;">Asignar al editor:</label>
                         <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
-                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                            <label style="color: var(--text); font-size: 13px; display: block; margin-bottom: 4px;">📤 Carpeta de ENTREGAS <span style="color: var(--text-dim); font-weight: 400;">(opcional)</span></label>
+                            <p style="color: var(--text-dim); font-size: 12px; margin-bottom: 6px;">
+                                Si tu equipo sube los archivos terminados a OTRA carpeta de Drive, pegá su link acá.
+                                Cuando aparezca un editado, el pendiente baja automáticamente. Cuando llega a 0, se cierra solo.
+                            </p>
+                            <div style="display: flex; gap: 6px;">
+                                <input id="output-folder-link" placeholder="Link de la carpeta de editados (opcional)" style="flex: 1; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit;">
+                                <button class="action-link" id="check-output-btn" style="padding: 8px 12px; font-size: 13px;">Verificar</button>
+                            </div>
+                            <div id="output-check-result" style="margin-top: 8px;"></div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
                             <button class="action-btn-main" id="confirm-assignment-btn">Vincular carpeta</button>
                             <button class="action-link" id="cancel-assignment-btn">Cancelar</button>
                         </div>
@@ -441,6 +455,7 @@
         let DRAGGING_TASK_ID = null;
         let CURRENT_PARENT = 'root';
         let SELECTED_FOLDER = null;
+        let SELECTED_OUTPUT_FOLDER = null;
         let FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
         let CAL_MONTH = new Date();
 
@@ -838,10 +853,10 @@
             }
             list.innerHTML = ASSIGNMENTS.map(a => `
                 <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px;">
-                    <span style="font-size: 18px;">📁</span>
-                    <div style="flex: 1;">
-                        <div style="color: var(--text); font-weight: 600;">${escapeHtml(a.folder_name)}</div>
-                        <div style="color: var(--text-dim); font-size: 12px;">→ ${escapeHtml(a.editor_name)}</div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="color: var(--text); font-weight: 600; font-size: 13px;">📁 ${escapeHtml(a.folder_name)} <span style="color: var(--text-dim); font-weight: 400; font-size: 11px;">(crudos)</span></div>
+                        ${a.output_folder_name ? `<div style="color: var(--text); font-size: 12px; margin-top: 2px;">📤 ${escapeHtml(a.output_folder_name)} <span style="color: var(--text-dim); font-size: 11px;">(editados)</span></div>` : ''}
+                        <div style="color: var(--text-dim); font-size: 11px; margin-top: 4px;">→ ${escapeHtml(a.editor_name)}</div>
                     </div>
                     <button data-fid="${attrEscape(a.folder_id)}" data-action="del-assignment" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">Quitar</button>
                 </div>
@@ -1054,19 +1069,64 @@
             if (e.key === 'Enter') document.getElementById('check-folder-btn').click();
         };
 
+        // Verificar carpeta OUTPUT (editados)
+        document.getElementById('check-output-btn').onclick = async () => {
+            const input = document.getElementById('output-folder-link').value.trim();
+            const result = document.getElementById('output-check-result');
+            if (!input) { SELECTED_OUTPUT_FOLDER = null; result.innerHTML = ''; return; }
+            result.innerHTML = '<div style="color: var(--text-dim); font-size: 12px;">⏳ Verificando…</div>';
+            try {
+                const info = await api('GET', driveFolderInfoUrl(input));
+                SELECTED_OUTPUT_FOLDER = { id: info.id, name: info.name };
+                result.innerHTML = `<div style="color: var(--green); font-size: 12px;">✅ 📁 ${escapeHtml(info.name)}</div>`;
+            } catch (e) {
+                result.innerHTML = `<div style="color: var(--red); font-size: 12px;">❌ ${escapeHtml(e.message)}</div>`;
+                SELECTED_OUTPUT_FOLDER = null;
+            }
+        };
+        document.getElementById('output-folder-link').onkeydown = (e) => {
+            if (e.key === 'Enter') document.getElementById('check-output-btn').click();
+        };
+
         document.getElementById('confirm-assignment-btn').onclick = async () => {
             if (!SELECTED_FOLDER) { toast('Verificá primero la carpeta', true); return; }
             const sel = document.getElementById('assign-editor');
             const editor_id = sel.value;
             const editor_name = sel.options[sel.selectedIndex]?.dataset.name || '';
             if (!editor_id) { toast('Seleccioná un editor', true); return; }
+
+            // Si pegaron link de output pero no verificaron, intentar verificar
+            const outputInput = document.getElementById('output-folder-link').value.trim();
+            if (outputInput && !SELECTED_OUTPUT_FOLDER) {
+                try {
+                    const info = await api('GET', driveFolderInfoUrl(outputInput));
+                    SELECTED_OUTPUT_FOLDER = { id: info.id, name: info.name };
+                } catch (e) {
+                    toast(`Carpeta de editados inválida: ${e.message}`, true);
+                    return;
+                }
+            }
+
+            const payload = {
+                folder_id: SELECTED_FOLDER.id,
+                folder_name: SELECTED_FOLDER.name,
+                editor_id, editor_name,
+            };
+            if (SELECTED_OUTPUT_FOLDER) {
+                payload.output_folder_id = SELECTED_OUTPUT_FOLDER.id;
+                payload.output_folder_name = SELECTED_OUTPUT_FOLDER.name;
+            }
+
             try {
-                await api('POST', assignmentsUrl(), { folder_id: SELECTED_FOLDER.id, folder_name: SELECTED_FOLDER.name, editor_id, editor_name });
+                await api('POST', assignmentsUrl(), payload);
                 ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || [];
                 renderAssignments();
                 document.getElementById('folder-picker').style.display = 'none';
                 document.getElementById('add-assignment-btn').style.display = '';
-                toast(`Vinculado: ${SELECTED_FOLDER.name} → ${editor_name}`);
+                SELECTED_OUTPUT_FOLDER = null;
+                document.getElementById('output-folder-link').value = '';
+                document.getElementById('output-check-result').innerHTML = '';
+                toast(`Vinculado: ${SELECTED_FOLDER.name} → ${editor_name}${SELECTED_OUTPUT_FOLDER ? ' (+ entregas)' : ''}`);
             } catch (e) { toast(e.message, true); }
         };
 
@@ -1081,12 +1141,16 @@
             result.innerHTML = '';
             try {
                 const r = await api('POST', scanDriveUrl());
+                let parts = [];
+                if (r.new_tasks > 0) parts.push(`✨ ${r.new_tasks} tarea${r.new_tasks > 1 ? 's' : ''} nueva${r.new_tasks > 1 ? 's' : ''}`);
+                if (r.completed_tasks > 0) parts.push(`✅ ${r.completed_tasks} cerrada${r.completed_tasks > 1 ? 's' : ''} (editados subidos)`);
+
                 let msg = '';
-                if (r.new_tasks > 0) {
-                    msg = `<div style="background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--green); font-size: 13px;">✅ ${r.new_tasks} tarea${r.new_tasks > 1 ? 's' : ''} nueva${r.new_tasks > 1 ? 's' : ''} creada${r.new_tasks > 1 ? 's' : ''} desde Drive · ${r.scanned_folders} carpetas escaneadas</div>`;
+                if (parts.length > 0) {
+                    msg = `<div style="background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--green); font-size: 13px;">${parts.join(' · ')} · ${r.scanned_folders} carpetas escaneadas</div>`;
                     await loadAll();
                 } else {
-                    msg = `<div style="background: var(--bg-card-2); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; color: var(--text-dim); font-size: 13px;">✓ Escaneadas ${r.scanned_folders} carpeta${r.scanned_folders !== 1 ? 's' : ''}. Sin archivos nuevos.</div>`;
+                    msg = `<div style="background: var(--bg-card-2); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; color: var(--text-dim); font-size: 13px;">✓ Escaneadas ${r.scanned_folders} carpeta${r.scanned_folders !== 1 ? 's' : ''}. Sin cambios.</div>`;
                 }
                 if (r.errors && r.errors.length) {
                     msg += `<div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--red); font-size: 12px; margin-top: 6px;">⚠️ Errores: ${r.errors.join(', ')}</div>`;
@@ -1103,8 +1167,11 @@
             if (IS_EDITOR_MODE) return;  // editores no triggerean scan
             try {
                 const r = await api('POST', scanDriveUrl());
-                if (r.new_tasks > 0) {
-                    toast(`🔔 ${r.new_tasks} ${r.new_tasks > 1 ? 'tareas nuevas' : 'tarea nueva'} desde Drive`);
+                let msgs = [];
+                if (r.new_tasks > 0) msgs.push(`🔔 ${r.new_tasks} ${r.new_tasks > 1 ? 'tareas nuevas' : 'tarea nueva'}`);
+                if (r.completed_tasks > 0) msgs.push(`✅ ${r.completed_tasks} cerrada${r.completed_tasks > 1 ? 's' : ''}`);
+                if (msgs.length > 0) {
+                    toast(msgs.join(' · '));
                     await loadAll();
                 }
             } catch (e) {

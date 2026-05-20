@@ -118,28 +118,48 @@ class handler(BaseHTTPRequestHandler):
         if not folder_id or not editor_id:
             return json_response(self, {"error": "Falta folder_id o editor_id"}, 400)
 
+        # Carpeta de editados (output) opcional
+        output_folder_id = (data.get("output_folder_id") or "").strip()
+        output_folder_name = (data.get("output_folder_name") or "").strip()
+
         assignments = kv_get(f"tenant:{tenant_id}:folder_assignments") or []
-        is_new = not any(a.get("folder_id") == folder_id for a in assignments)
-        # Si el folder ya existía (re-assign), no rehacer baseline (ya lo tiene)
+        existing = next((a for a in assignments if a.get("folder_id") == folder_id), None)
+        is_new = existing is None
+
+        # Remove existing, append new
         assignments = [a for a in assignments if a.get("folder_id") != folder_id]
-        assignments.append({
+        new_assignment = {
             "folder_id": folder_id,
             "folder_name": folder_name,
             "editor_id": editor_id,
             "editor_name": editor_name,
-        })
+        }
+        if output_folder_id:
+            new_assignment["output_folder_id"] = output_folder_id
+            new_assignment["output_folder_name"] = output_folder_name
+        assignments.append(new_assignment)
         kv_set(f"tenant:{tenant_id}:folder_assignments", assignments)
 
-        # Baseline: marcar archivos actuales como ya conocidos
+        # Baseline: marcar archivos actuales como conocidos
+        # (input + output si existen)
         baseline_count = 0
         if is_new:
-            baseline_count = do_baseline(tenant_id, folder_id)
+            baseline_count += do_baseline(tenant_id, folder_id)
+            if output_folder_id:
+                baseline_count += do_baseline(tenant_id, output_folder_id)
+
+        msg = f"Carpeta vinculada. {baseline_count} archivos existentes marcados como baseline (no van a generar tareas). Solo los NUEVOS van a aparecer."
+        if not is_new:
+            msg = "Carpeta re-asignada."
+            if output_folder_id and (not existing or not existing.get("output_folder_id")):
+                msg += f" + agregada carpeta de editados."
+                baseline_count = do_baseline(tenant_id, output_folder_id)
 
         return json_response(self, {
             "ok": True,
             "assignments": assignments,
             "baseline_files": baseline_count,
-            "message": f"Carpeta vinculada. {baseline_count} archivos existentes marcados como baseline (no van a generar tareas). Solo los archivos NUEVOS que subas van a aparecer." if is_new else "Carpeta re-asignada (baseline ya hecho previamente).",
+            "message": msg,
         })
 
     def do_DELETE(self):
