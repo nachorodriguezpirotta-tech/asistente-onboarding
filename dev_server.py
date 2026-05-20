@@ -75,7 +75,11 @@ _kv_load()
 
 
 def _mock_kv_set(key, value, ttl_seconds=None):
-    _kv_memory[key] = {"value": json.dumps(value) if isinstance(value, dict) else value, "ts": time.time()}
+    # IMPORTANTE: serializar SIEMPRE — listas, dicts, lo que sea. Sino al
+    # persistir en .dev_kv.json falla y se pierde el dato.
+    if not isinstance(value, str):
+        value = json.dumps(value)
+    _kv_memory[key] = {"value": value, "ts": time.time()}
     _kv_save()
 
 
@@ -344,6 +348,16 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         if self._route_api("POST"):
+            return
+        self.send_error(404)
+
+    def do_PATCH(self):
+        if self._route_api("PATCH"):
+            return
+        self.send_error(404)
+
+    def do_DELETE(self):
+        if self._route_api("DELETE"):
             return
         self.send_error(404)
 

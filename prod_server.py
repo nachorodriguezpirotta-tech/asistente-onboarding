@@ -139,6 +139,16 @@ class ProdHandler(http.server.SimpleHTTPRequestHandler):
             return
         self.send_error(404)
 
+    def do_PATCH(self):
+        if self._route_api("PATCH"):
+            return
+        self.send_error(404)
+
+    def do_DELETE(self):
+        if self._route_api("DELETE"):
+            return
+        self.send_error(404)
+
     def do_OPTIONS(self):
         if self._route_api("OPTIONS"):
             return
