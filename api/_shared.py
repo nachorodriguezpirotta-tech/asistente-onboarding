@@ -65,10 +65,16 @@ def new_pedido_id() -> str:
 
 
 def base_url(handler) -> str:
-    """Reconstruye la URL base del request (https://tuapp.vercel.app)."""
+    """Reconstruye la URL base del request (https://tuapp.vercel.app).
+
+    Si el host NO es localhost, forzamos HTTPS — porque cualquier dominio público
+    en 2025+ es HTTPS, y X-Forwarded-Proto a veces llega como 'http' detrás de
+    proxies (Cloudflare, etc.)."""
     host = handler.headers.get("Host", "localhost:3000")
-    proto = handler.headers.get("X-Forwarded-Proto", "https")
-    return f"{proto}://{host}"
+    is_local = host.startswith("localhost") or host.startswith("127.0.0.1")
+    if is_local:
+        return f"http://{host}"
+    return f"https://{host}"
 
 
 def json_response(handler, data: dict, status: int = 200):
