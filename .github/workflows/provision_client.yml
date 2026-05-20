@@ -49,10 +49,11 @@ jobs:
           git config --global user.name "asistente-onboarding-bot"
           git config --global user.email "bot@asistente.local"
 
-      - name: Authenticate gh CLI
+      # gh CLI usa GH_TOKEN del env directamente, no hace falta login.
+      - name: Verify gh CLI auth
         env:
           GH_TOKEN: ${{ secrets.PROVISION_GH_PAT }}
-        run: echo "${{ secrets.PROVISION_GH_PAT }}" | gh auth login --with-token
+        run: gh auth status
 
       - name: Run provision
         env:
