@@ -1,8 +1,15 @@
 """
 GET    /api/tasks?tenant=<id>&t=<token>           → lista tareas
-POST   /api/tasks?tenant=<id>&t=<token>  body: {client, assignee, title, notes?}
-PATCH  /api/tasks?tenant=<id>&t=<token>  body: {id, status?, assignee?, title?, notes?}
+POST   /api/tasks?tenant=<id>&t=<token>  body: {client, assignee?, title?, notes?, urgent?, pending_count?}
+PATCH  /api/tasks?tenant=<id>&t=<token>  body: {id, ...campos a actualizar}
 DELETE /api/tasks?tenant=<id>&t=<token>&id=<task_id>
+
+Campos soportados de una task:
+  - id, client, title, assignee, status (pending|done)
+  - notes (texto libre)
+  - urgent (bool — marca con 🚨)
+  - pending_count (int — cuántos archivos/videos quedan pendientes)
+  - created_at, completed_at
 """
 
 import datetime
@@ -63,7 +70,6 @@ class handler(BaseHTTPRequestHandler):
         client = (data.get("client") or "").strip()
         title = (data.get("title") or "").strip()
         assignee = (data.get("assignee") or "").strip()
-        notes = (data.get("notes") or "").strip()
 
         if not client and not title:
             return json_response(self, {"error": "Falta cliente o título"}, 400)
@@ -74,7 +80,9 @@ class handler(BaseHTTPRequestHandler):
             "client": client,
             "title": title or client,
             "assignee": assignee,
-            "notes": notes,
+            "notes": (data.get("notes") or "").strip(),
+            "urgent": bool(data.get("urgent", False)),
+            "pending_count": int(data.get("pending_count", 1)) or 1,
             "status": "pending",
             "created_at": now_iso(),
         }
@@ -99,11 +107,25 @@ class handler(BaseHTTPRequestHandler):
         updated = None
         for t in tasks:
             if t.get("id") == tid:
+                # Campos string
                 for field in ("client", "title", "assignee", "notes", "status"):
                     if field in data:
-                        t[field] = (data[field] or "").strip() if isinstance(data[field], str) else data[field]
+                        v = data[field]
+                        t[field] = v.strip() if isinstance(v, str) else v
+                # urgent (bool)
+                if "urgent" in data:
+                    t["urgent"] = bool(data["urgent"])
+                # pending_count (int)
+                if "pending_count" in data:
+                    try:
+                        t["pending_count"] = max(0, int(data["pending_count"]))
+                    except Exception:
+                        pass
+                # Si status pasa a done y no tenía completed_at
                 if t.get("status") == "done" and not t.get("completed_at"):
                     t["completed_at"] = now_iso()
+                elif t.get("status") == "pending":
+                    t.pop("completed_at", None)
                 updated = t
                 break
         if not updated:

@@ -17,15 +17,15 @@
             --text-dim: #888;
             --accent: #ff6b35;
             --green: #4ade80;
-            --red: #ef4444;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --purple: #a78bfa;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
+            background: var(--bg); color: var(--text); line-height: 1.5;
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
@@ -35,35 +35,25 @@
         header.main-header {
             position: sticky; top: 0; z-index: 50;
             background: var(--bg);
-            padding: 12px 16px;
-            padding-top: calc(12px + env(safe-area-inset-top));
+            padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
             border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center; gap: 12px;
         }
         h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
         @media (min-width: 700px) { h1 { font-size: 22px; } }
-        h1 .red-dot {
-            display: inline-block; width: 10px; height: 10px;
-            background: var(--accent); border-radius: 50%;
-            margin-right: 10px; vertical-align: middle;
-        }
+        h1 .red-dot { display: inline-block; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; margin-right: 10px; vertical-align: middle; }
         .header-meta { color: var(--text-dim); font-size: 11px; text-align: right; }
         .header-meta strong { color: var(--text); font-size: 13px; display: block; }
 
         .tabs {
-            display: flex; gap: 4px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 16px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            display: flex; gap: 4px; border-bottom: 1px solid var(--border);
+            margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
         }
         .tab {
-            background: transparent; border: none;
-            color: var(--text-dim);
+            background: transparent; border: none; color: var(--text-dim);
             padding: 12px 16px; cursor: pointer;
             font-size: 14px; font-weight: 600; font-family: inherit;
-            border-bottom: 2px solid transparent;
-            white-space: nowrap;
+            border-bottom: 2px solid transparent; white-space: nowrap;
         }
         .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
         .tab:hover:not(.active) { color: var(--text); }
@@ -71,219 +61,262 @@
         .view { display: none; }
         .view.active { display: block; }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 8px; margin-bottom: 16px;
+        /* Summary banner */
+        .summary-banner {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;
         }
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 14px;
-        }
-        .stat-card .label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-        .stat-card .value { font-size: 26px; font-weight: 800; }
-        .stat-card.accent .value { color: var(--accent); }
-        .stat-card.green .value { color: var(--green); }
+        .summary-banner .stat { padding: 6px 4px; }
+        .summary-banner .stat .label { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+        .summary-banner .stat strong { color: var(--text); font-size: 22px; font-weight: 800; line-height: 1; }
+        .summary-banner .stat.urgent strong { color: var(--red); }
+        .summary-banner .stat.accent strong { color: var(--accent); }
+        .summary-banner .stat.green strong { color: var(--green); }
 
-        /* Editor blocks (estilo dashboard Revolv) */
+        /* Editor blocks */
         .editors-list { display: flex; flex-direction: column; gap: 14px; }
 
         .editor-block {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 16px;
-            transition: border-color .15s;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 14px 16px;
+            transition: border-color .15s, background .15s;
         }
+        .editor-block.drop-target { border-color: var(--accent); background: rgba(255, 107, 53, 0.05); }
+        .editor-block.on-vacation { opacity: 0.55; }
+
         .editor-block h2 {
             font-size: 16px; font-weight: 700;
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 8px;
+            margin-bottom: 8px; gap: 8px;
         }
-        .editor-block h2 > span:first-child {
-            flex: 1;
-            display: flex; align-items: center; gap: 8px;
-            min-width: 0;
+        .editor-block h2 > .name-section {
+            flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
         }
         .editor-block h2 .name-edit {
-            background: transparent;
-            border: none;
-            color: var(--text);
-            font-size: 16px; font-weight: 700;
-            font-family: inherit;
-            padding: 4px 6px; border-radius: 6px;
-            flex: 1;
-            min-width: 0;
+            background: transparent; border: none; color: var(--text);
+            font-size: 16px; font-weight: 700; font-family: inherit;
+            padding: 4px 6px; border-radius: 6px; flex: 1; min-width: 0;
         }
         .editor-block h2 .name-edit:hover, .editor-block h2 .name-edit:focus {
-            background: var(--bg-card-2);
-            outline: 1px solid var(--accent);
+            background: var(--bg-card-2); outline: 1px solid var(--accent);
         }
-        .editor-block h2 .count {
-            color: var(--text-dim); font-weight: 400; font-size: 13px;
-        }
-        .editor-block h2 .del-editor {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-dim);
-            width: 26px; height: 26px;
-            border-radius: 6px; cursor: pointer;
-            font-size: 14px; padding: 0;
-        }
-        .editor-block h2 .del-editor:hover {
-            border-color: var(--red); color: var(--red);
-        }
-
-        .editor-block .clientes-list {
-            display: flex; flex-wrap: wrap; gap: 6px;
-            margin-bottom: 10px;
-        }
-        .cliente-card {
-            background: var(--bg-card-2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 7px 10px;
-            display: inline-flex; align-items: center; gap: 6px;
+        .editor-block h2 .count { color: var(--text-dim); font-weight: 400; font-size: 13px; }
+        .editor-block h2 .vacation-badge { color: var(--yellow); font-size: 12px; font-weight: 600; }
+        .editor-block h2 .actions { display: flex; gap: 4px; }
+        .editor-block h2 .actions button {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text-dim); width: 28px; height: 28px;
+            border-radius: 6px; cursor: pointer; padding: 0;
+            display: flex; align-items: center; justify-content: center;
             font-size: 13px;
         }
-        .cliente-card.urgent {
-            border-color: var(--accent);
-            background: rgba(255, 107, 53, 0.08);
-        }
-        .cliente-card .cliente-name { color: var(--text); font-weight: 500; }
-        .cliente-card .delete-btn {
-            background: transparent; border: none; color: var(--text-dim);
-            cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1;
-        }
-        .cliente-card .delete-btn:hover { color: var(--green); }
-        .cliente-card.done { opacity: 0.5; }
-        .cliente-card.done .cliente-name { text-decoration: line-through; }
+        .editor-block h2 .actions button:hover { background: var(--bg-card-2); color: var(--text); }
+        .editor-block h2 .actions button.vacation.active { background: rgba(251, 191, 36, 0.15); color: var(--yellow); border-color: rgba(251, 191, 36, 0.3); }
+        .editor-block h2 .actions button.del:hover { color: var(--red); border-color: var(--red); }
 
-        .add-form {
-            display: flex; gap: 6px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border);
+        .editor-email {
+            background: transparent; border: none; color: var(--text-dim);
+            font-size: 12px; padding: 0 6px; font-family: inherit; width: 100%;
+            margin-bottom: 10px;
         }
+        .editor-email:hover, .editor-email:focus {
+            background: var(--bg-card-2); outline: 1px solid var(--border);
+            color: var(--text); border-radius: 4px;
+        }
+
+        /* Cliente cards */
+        .clientes-list {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+        }
+        .cliente-card {
+            background: var(--bg-card-2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 7px 10px;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 13px; cursor: grab;
+        }
+        .cliente-card:active { cursor: grabbing; }
+        .cliente-card.dragging { opacity: 0.4; }
+        .cliente-card.urgent {
+            border-color: var(--red);
+            background: rgba(248, 113, 113, 0.08);
+        }
+        .cliente-card.urgent .cliente-name::before { content: '🚨 '; }
+        .cliente-card .cliente-name { color: var(--text); font-weight: 500; }
+        .cliente-card .cliente-note {
+            color: var(--yellow); font-size: 11px; margin-left: 6px;
+            max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .cliente-card .count-controls {
+            display: inline-flex; align-items: center; gap: 2px;
+            background: rgba(255, 107, 53, 0.1); border-radius: 4px;
+            margin: 0 4px; padding: 2px;
+        }
+        .cliente-card .count-btn {
+            background: transparent; border: none; color: var(--accent);
+            width: 20px; height: 20px; border-radius: 3px;
+            cursor: pointer; font-size: 14px; font-weight: 700; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cliente-card .count-btn:hover { background: rgba(255, 107, 53, 0.2); }
+        .cliente-card .cliente-count {
+            color: var(--accent); font-weight: 700; font-size: 13px;
+            min-width: 16px; text-align: center; cursor: pointer;
+        }
+        .cliente-card .action-btn {
+            background: transparent; border: none; cursor: pointer;
+            opacity: 0.45; font-size: 13px; padding: 2px 4px;
+            transition: opacity .15s;
+        }
+        .cliente-card:hover .action-btn { opacity: 0.85; }
+        .cliente-card .action-btn:hover { opacity: 1; }
+        .cliente-card .urgent-btn.active { opacity: 1; color: var(--red); }
+        .cliente-card .note-btn.active { opacity: 1; color: var(--yellow); }
+        .cliente-card .delete-btn:hover { color: var(--green); }
+
+        /* Add form */
+        .add-form { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
         .add-form input {
-            flex: 1; background: var(--bg-card-2);
-            border: 1px solid var(--border); color: var(--text);
-            padding: 8px 10px; border-radius: 8px;
+            flex: 1; background: var(--bg-card-2); border: 1px solid var(--border);
+            color: var(--text); padding: 8px 10px; border-radius: 8px;
             font-size: 13px; font-family: inherit;
         }
         .add-form input:focus { outline: none; border-color: var(--accent); }
         .add-form button {
-            background: var(--accent); color: white;
-            border: none; padding: 8px 14px;
-            border-radius: 8px; cursor: pointer;
+            background: var(--accent); color: white; border: none;
+            padding: 8px 14px; border-radius: 8px; cursor: pointer;
             font-size: 16px; font-weight: 700; font-family: inherit;
         }
         .add-form button:hover { background: #ff5219; }
 
-        .editor-email {
-            background: transparent; border: none; color: var(--text-dim);
-            font-size: 12px; padding: 0 6px;
-            font-family: inherit; width: 100%;
-            margin-bottom: 8px;
-        }
-        .editor-email:hover, .editor-email:focus {
-            background: var(--bg-card-2);
-            outline: 1px solid var(--border);
-            color: var(--text);
-            border-radius: 4px;
-        }
-
         .btn-add-editor {
             background: transparent; border: 1px dashed var(--border);
-            color: var(--text-dim);
-            padding: 14px; border-radius: 14px;
-            cursor: pointer; width: 100%;
-            font-size: 14px; font-family: inherit;
+            color: var(--text-dim); padding: 14px; border-radius: 14px;
+            cursor: pointer; width: 100%; font-size: 14px; font-family: inherit;
+            margin-top: 12px;
         }
         .btn-add-editor:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* Welcome banner */
+        /* Welcome */
         .welcome-banner {
             background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 107, 53, 0.03));
             border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 14px;
-            padding: 18px 20px;
-            margin-bottom: 16px;
+            border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
             display: flex; align-items: center; gap: 14px;
         }
         .welcome-banner .icon { font-size: 28px; }
         .welcome-banner h2 { font-size: 16px; margin-bottom: 4px; }
         .welcome-banner p { color: var(--text-dim); font-size: 13px; }
         .welcome-banner .close {
-            margin-left: auto; background: transparent;
-            border: 1px solid var(--border); color: var(--text-dim);
-            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+            margin-left: auto; background: transparent; border: 1px solid var(--border);
+            color: var(--text-dim); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
         }
 
         /* Settings */
         .settings-block {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px; margin-bottom: 14px;
         }
         .settings-block h3 { color: var(--text); font-size: 15px; font-weight: 700; margin-bottom: 14px; }
         .settings-block label {
-            display: block; color: var(--text);
-            font-size: 13px; margin-bottom: 4px; margin-top: 12px;
+            display: block; color: var(--text); font-size: 13px;
+            margin-bottom: 4px; margin-top: 12px;
         }
         .settings-block label:first-of-type { margin-top: 0; }
         .settings-block .hint { color: var(--text-dim); font-size: 12px; margin-top: -2px; margin-bottom: 6px; }
         .settings-block input {
-            width: 100%; background: var(--bg-card-2);
-            border: 1px solid var(--border); color: var(--text);
-            padding: 10px 12px; border-radius: 8px;
+            width: 100%; background: var(--bg-card-2); border: 1px solid var(--border);
+            color: var(--text); padding: 10px 12px; border-radius: 8px;
             font-size: 14px; font-family: inherit;
         }
         .settings-block input:focus { outline: none; border-color: var(--accent); }
         .settings-block .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .save-btn {
-            background: var(--accent); color: white;
-            border: none; padding: 12px 24px;
-            border-radius: 8px; font-weight: 700;
+            background: var(--accent); color: white; border: none;
+            padding: 12px 24px; border-radius: 8px; font-weight: 700;
             cursor: pointer; font-family: inherit;
         }
         .save-btn:hover { background: #ff5219; }
         .save-btn:disabled { opacity: 0.6; }
 
-        /* Drive sync info banner */
         .drive-info {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 14px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px; margin-bottom: 14px;
         }
         .drive-info .status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .drive-info .status .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .drive-info .status.pending .dot { background: #ffa500; }
         .drive-info .status.ready .dot { background: var(--green); }
         .drive-info .status strong { color: var(--text); font-size: 14px; }
-        .drive-info p { color: var(--text-dim); font-size: 13px; }
         .drive-info code { background: var(--bg-card-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
 
-        .empty {
-            text-align: center; padding: 40px 20px;
-            color: var(--text-dim);
+        /* Stats page */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+            margin-bottom: 20px;
         }
+        .stats-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px;
+        }
+        .stats-card .label { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .stats-card .value { font-size: 28px; font-weight: 800; }
+
+        .editor-stats-row {
+            display: grid; grid-template-columns: 1fr auto auto auto auto auto;
+            gap: 12px; align-items: center;
+            padding: 12px 16px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 10px;
+            margin-bottom: 6px;
+        }
+        .editor-stats-row .name { font-weight: 600; }
+        .editor-stats-row .metric { text-align: center; }
+        .editor-stats-row .metric .num { font-size: 18px; font-weight: 700; color: var(--text); display: block; }
+        .editor-stats-row .metric .small { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
+        .editor-stats-row .health { width: 10px; height: 10px; border-radius: 50%; }
+        .editor-stats-row .health.ok { background: var(--green); }
+        .editor-stats-row .health.warning { background: var(--yellow); }
+        .editor-stats-row .health.critical { background: var(--red); }
+        @media (max-width: 700px) {
+            .editor-stats-row { grid-template-columns: 1fr auto; gap: 8px; }
+            .editor-stats-row .metric { display: none; }
+            .editor-stats-row .metric.primary { display: block; }
+        }
+
+        /* Modals */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; padding: 20px;
+        }
+        .modal {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px; max-width: 420px; width: 100%;
+        }
+        .modal h3 { margin-bottom: 12px; }
+        .modal textarea, .modal input {
+            width: 100%; background: var(--bg-card-2); border: 1px solid var(--border);
+            color: var(--text); padding: 10px; border-radius: 8px;
+            font-family: inherit; font-size: 14px; margin-bottom: 12px;
+            resize: vertical;
+        }
+        .modal textarea { min-height: 120px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .modal-actions button {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text); padding: 8px 16px; border-radius: 8px;
+            cursor: pointer; font-family: inherit;
+        }
+        .modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+
+        .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
         .loading { text-align: center; padding: 40px; color: var(--text-dim); }
         .error { background: #2a1a1a; color: #ff8080; padding: 14px; border-radius: 10px; margin: 16px 0; }
 
         .toast {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: #1a3a1a; color: #b0e0b0;
             border: 1px solid #2a5a2a; border-radius: 8px;
-            padding: 10px 18px; font-size: 13px;
-            z-index: 200;
+            padding: 10px 18px; font-size: 13px; z-index: 300;
             animation: toastIn .2s;
         }
         .toast.error { background: #2a1a1a; color: #ff8080; border-color: #441a1a; }
@@ -306,24 +339,66 @@
             <div class="icon">🎉</div>
             <div>
                 <h2 id="welcome-title">¡Bienvenido!</h2>
-                <p>Tu sistema está listo. Renombrá los editores genéricos por los reales, configurá la sincronización con Drive, y empezás a usarlo.</p>
+                <p>Renombrá los editores, vinculá carpetas de Drive, y arranca todo automático.</p>
             </div>
             <button class="close" id="welcome-close">Entendido</button>
         </div>
 
         <div class="tabs">
             <button class="tab active" data-view="overview">Pendientes</button>
-            <button class="tab" data-view="settings">Configuración</button>
+            <button class="tab" data-view="stats">Estadísticas</button>
             <button class="tab" data-view="drive">Drive</button>
+            <button class="tab" data-view="settings">Config</button>
         </div>
 
         <!-- VIEW: PENDIENTES -->
         <div class="view active" id="view-overview">
-            <div class="stats-row" id="stats"></div>
+            <div class="summary-banner" id="summary"></div>
             <div class="editors-list" id="editors-list">
                 <div class="loading">Cargando…</div>
             </div>
             <button class="btn-add-editor" id="add-editor-btn">+ Agregar <span id="vocab-assignee">editor</span></button>
+        </div>
+
+        <!-- VIEW: STATS -->
+        <div class="view" id="view-stats">
+            <div class="stats-grid" id="stats-top"></div>
+            <h3 style="margin: 14px 0 8px; font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">Por editor</h3>
+            <div id="stats-editors"></div>
+        </div>
+
+        <!-- VIEW: DRIVE -->
+        <div class="view" id="view-drive">
+            <div class="drive-info">
+                <div class="status ready"><span class="dot"></span><strong>Cuenta Google conectada</strong></div>
+                <p><strong style="color: var(--text);">Email:</strong> <code id="drive-email">—</code></p>
+            </div>
+
+            <div class="settings-block">
+                <h3>Carpetas vinculadas a editores</h3>
+                <p class="hint" style="margin-bottom: 14px;">
+                    Asigná una carpeta de Drive a cada editor. Cuando aparezca un archivo nuevo ahí,
+                    se crea automáticamente una tarea para ese editor.
+                </p>
+                <div id="assignments-list"></div>
+                <button class="save-btn" id="add-assignment-btn" style="margin-top: 12px;">+ Vincular nueva carpeta</button>
+
+                <div id="folder-picker" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+                    <label>Elegí carpeta de tu Drive:</label>
+                    <div style="display: flex; gap: 4px; margin-bottom: 8px; font-size: 12px; color: var(--text-dim);">
+                        <span id="folder-breadcrumb">Mi Unidad</span>
+                    </div>
+                    <div id="folder-list" style="max-height: 280px; overflow-y: auto; background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px;">
+                        <div class="loading">Cargando carpetas…</div>
+                    </div>
+                    <label style="margin-top: 14px;">Asignar al editor:</label>
+                    <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="save-btn" id="confirm-assignment-btn">Vincular esta carpeta</button>
+                        <button class="save-btn" id="cancel-assignment-btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim);">Cancelar</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- VIEW: SETTINGS -->
@@ -340,81 +415,20 @@
                 <h3>Vocabulario</h3>
                 <p class="hint" style="margin-bottom: 12px;">Cómo se llaman las cosas en tu negocio.</p>
                 <div class="grid-2">
-                    <div>
-                        <label>Lo que entra (singular)</label>
-                        <input id="set-input-sing" placeholder="crudo / shoot / brief">
-                        <div class="hint">Lo que sube tu cliente</div>
-                    </div>
-                    <div>
-                        <label>Lo que entra (plural)</label>
-                        <input id="set-input-plural">
-                    </div>
+                    <div><label>Lo que entra (sing.)</label><input id="set-input-sing"></div>
+                    <div><label>Lo que entra (plural)</label><input id="set-input-plural"></div>
                 </div>
                 <div class="grid-2">
-                    <div>
-                        <label>Lo que sale (singular)</label>
-                        <input id="set-output-sing" placeholder="editado / foto retocada">
-                        <div class="hint">Lo que entrega el equipo</div>
-                    </div>
-                    <div>
-                        <label>Lo que sale (plural)</label>
-                        <input id="set-output-plural">
-                    </div>
+                    <div><label>Lo que sale (sing.)</label><input id="set-output-sing"></div>
+                    <div><label>Lo que sale (plural)</label><input id="set-output-plural"></div>
                 </div>
                 <div class="grid-2">
-                    <div>
-                        <label>Responsable (singular)</label>
-                        <input id="set-assignee-sing">
-                    </div>
-                    <div>
-                        <label>Responsable (plural)</label>
-                        <input id="set-assignee-plural">
-                    </div>
+                    <div><label>Responsable (sing.)</label><input id="set-assignee-sing"></div>
+                    <div><label>Responsable (plural)</label><input id="set-assignee-plural"></div>
                 </div>
             </div>
 
             <button class="save-btn" id="save-settings-btn">Guardar cambios</button>
-        </div>
-
-        <!-- VIEW: DRIVE SYNC -->
-        <div class="view" id="view-drive">
-            <div class="drive-info">
-                <div class="status ready">
-                    <span class="dot"></span>
-                    <strong>Cuenta Google conectada</strong>
-                </div>
-                <p style="margin-bottom: 6px;"><strong style="color: var(--text);">Email:</strong> <code id="drive-email">—</code></p>
-            </div>
-
-            <div class="settings-block">
-                <h3>Carpetas vinculadas a editores</h3>
-                <p class="hint" style="margin-bottom: 14px;">
-                    Asigná una carpeta de tu Drive a cada editor. Cuando aparezca un archivo nuevo en esa carpeta,
-                    el sistema crea automáticamente una tarea para ese editor.
-                </p>
-
-                <div id="assignments-list"></div>
-
-                <button class="save-btn" id="add-assignment-btn" style="margin-top: 12px;">+ Vincular nueva carpeta</button>
-
-                <div id="folder-picker" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
-                    <label>Elegí carpeta de tu Drive:</label>
-                    <div style="display: flex; gap: 4px; margin-bottom: 8px; font-size: 12px; color: var(--text-dim);">
-                        <span id="folder-breadcrumb">Mi Unidad</span>
-                    </div>
-                    <div id="folder-list" style="max-height: 280px; overflow-y: auto; background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px;">
-                        <div class="loading">Cargando carpetas…</div>
-                    </div>
-
-                    <label style="margin-top: 14px;">Asignar al editor:</label>
-                    <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
-
-                    <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <button class="save-btn" id="confirm-assignment-btn">Vincular esta carpeta</button>
-                        <button class="save-btn" id="cancel-assignment-btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim);">Cancelar</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div>
@@ -427,22 +441,22 @@
         const IS_WELCOME = params.get('welcome') === '1';
 
         let STATE = { profile: {}, editors: [], tasks: [], clients: [] };
+        let STATS = null;
+        let ASSIGNMENTS = [];
+        let DRAGGING_TASK_ID = null;
+        let CURRENT_PARENT = 'root';
+        let SELECTED_FOLDER = null;
+        let FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
 
         function toast(msg, err = false) {
             const t = document.createElement('div');
             t.className = 'toast' + (err ? ' error' : '');
             t.textContent = msg;
             document.body.appendChild(t);
-            setTimeout(() => t.remove(), 2000);
+            setTimeout(() => t.remove(), 2200);
         }
-
-        function escapeHtml(s) {
-            return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-        }
-
-        function attrEscape(s) {
-            return String(s || '').replace(/"/g, '&quot;');
-        }
+        function escapeHtml(s) { return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+        function attrEscape(s) { return String(s || '').replace(/"/g, '&quot;'); }
 
         async function api(method, url, body) {
             const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -456,80 +470,239 @@
         const tenantUrl = () => `/api/tenant/${TENANT_ID}?t=${encodeURIComponent(TOKEN)}`;
         const editorsUrl = (extra = '') => `/api/editors?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
         const tasksUrl = (extra = '') => `/api/tasks?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+        const statsUrl = () => `/api/tenant_stats?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const driveFoldersUrl = (parent = 'root') => `/api/drive_folders?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}&parent=${encodeURIComponent(parent)}`;
         const assignmentsUrl = (extra = '') => `/api/folder_assignments?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
-
-        let ASSIGNMENTS = [];
-        let CURRENT_PARENT = 'root';
-        let SELECTED_FOLDER = null;
-        let FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
 
         async function loadAll() {
             try {
                 STATE = await api('GET', tenantUrl());
-                // Cargar assignments en paralelo
-                try {
-                    const a = await api('GET', assignmentsUrl());
-                    ASSIGNMENTS = a.assignments || [];
-                } catch (e) { ASSIGNMENTS = []; }
+                try { ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || []; } catch { ASSIGNMENTS = []; }
                 render();
             } catch (e) {
                 document.body.innerHTML = `<div style="padding:60px; text-align:center; color:#888;">
                     <h1 style="color:#fff;">Acceso denegado</h1>
                     <p>${escapeHtml(e.message)}</p>
-                    <p style="margin-top:20px;"><a href="/" style="color:var(--accent);">Volver al inicio</a></p>
                 </div>`;
             }
         }
 
-        // ── Drive folder picker ──
-        async function loadDriveFolders(parent = 'root') {
-            CURRENT_PARENT = parent;
-            const list = document.getElementById('folder-list');
-            list.innerHTML = '<div class="loading">Cargando carpetas…</div>';
-            try {
-                const r = await api('GET', driveFoldersUrl(parent));
-                const folders = r.folders || [];
-                const back = parent !== 'root' ?
-                    `<div class="folder-row" data-id="root" data-back="1" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-dim);">⬅️ Volver a Mi Unidad</div>` : '';
-                list.innerHTML = back + (folders.length === 0 ?
-                    '<div class="empty" style="padding: 20px;">Sin carpetas acá. Subí de nivel o creá una en Drive.</div>' :
-                    folders.map(f => `
-                        <div class="folder-row" data-id="${attrEscape(f.id)}" data-name="${attrEscape(f.name)}" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border);">
-                            <span>📁 ${escapeHtml(f.name)}</span>
-                            <button class="enter-folder" data-id="${attrEscape(f.id)}" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Entrar →</button>
+        function render() {
+            const p = STATE.profile;
+            document.title = `${p.brand_name || 'Asistente'} — Dashboard`;
+            document.getElementById('nav-brand').textContent = p.brand_name || 'Asistente';
+            document.getElementById('nav-admin').textContent = p.brand_name || '—';
+            document.getElementById('nav-subtitle').textContent = `${p.input_plural || 'archivos'} → ${p.output_plural || 'entregas'}`;
+            document.getElementById('welcome-title').textContent = `¡Bienvenido, ${p.brand_name || ''}!`;
+            document.getElementById('vocab-assignee').textContent = p.assignee_singular || 'editor';
+            document.getElementById('drive-email').textContent = p.google_email || '—';
+
+            renderOverview();
+            renderSettings();
+            renderAssignments();
+
+            const sel = document.getElementById('assign-editor');
+            if (sel) sel.innerHTML = STATE.editors.map(e => `<option value="${attrEscape(e.id)}" data-name="${attrEscape(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+        }
+
+        function renderOverview() {
+            const totalPending = STATE.tasks.filter(t => t.status !== 'done').reduce((sum, t) => sum + (parseInt(t.pending_count) || 1), 0);
+            const totalDone = STATE.tasks.filter(t => t.status === 'done').length;
+            const totalUrgent = STATE.tasks.filter(t => t.status !== 'done' && t.urgent).length;
+
+            document.getElementById('summary').innerHTML = `
+                <div class="stat accent"><div class="label">${escapeHtml(STATE.profile.output_plural || 'Pendientes')}</div><strong>${totalPending}</strong></div>
+                <div class="stat urgent"><div class="label">Urgentes</div><strong>${totalUrgent}</strong></div>
+                <div class="stat green"><div class="label">Cerrados</div><strong>${totalDone}</strong></div>
+                <div class="stat"><div class="label">${escapeHtml(STATE.profile.assignee_plural || 'Editores')}</div><strong>${STATE.editors.length}</strong></div>
+            `;
+
+            const html = STATE.editors.map(e => {
+                const editorTasks = STATE.tasks.filter(t => t.assignee === e.name && t.status !== 'done');
+                const totalCount = editorTasks.reduce((s, t) => s + (parseInt(t.pending_count) || 1), 0);
+                const onVac = !!e.on_vacation;
+                return `
+                    <div class="editor-block ${onVac ? 'on-vacation' : ''}" data-editor-name="${attrEscape(e.name)}"
+                         ondragover="event.preventDefault(); this.classList.add('drop-target')"
+                         ondragleave="this.classList.remove('drop-target')"
+                         ondrop="onDropTask(event, '${attrEscape(e.name)}')">
+                        <h2>
+                            <span class="name-section">
+                                <input class="name-edit" value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name">
+                                <span class="count">${editorTasks.length} pend · ${totalCount} ${STATE.profile.output_plural || 'items'}</span>
+                                ${onVac ? '<span class="vacation-badge">🌴</span>' : ''}
+                            </span>
+                            <span class="actions">
+                                <button class="vacation ${onVac ? 'active' : ''}" data-id="${e.id}" data-action="toggle-vacation" title="${onVac ? 'Sacar de vacaciones' : 'Marcar como vacaciones'}">🌴</button>
+                                <button class="del" data-id="${e.id}" data-action="del-editor" title="Borrar editor">✕</button>
+                            </span>
+                        </h2>
+                        <input class="editor-email" placeholder="email (opcional)" value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email">
+                        <div class="clientes-list">
+                            ${editorTasks.map(t => {
+                                const count = parseInt(t.pending_count) || 1;
+                                return `
+                                <div class="cliente-card ${t.urgent ? 'urgent' : ''}" data-tid="${t.id}" draggable="true"
+                                     ondragstart="onDragStart(event, '${t.id}')" ondragend="onDragEnd(event)">
+                                    <span class="cliente-name">${escapeHtml(t.client || t.title || '—')}</span>
+                                    <div class="count-controls">
+                                        <button class="count-btn" data-tid="${t.id}" data-action="count-minus" title="-1">−</button>
+                                        <span class="cliente-count" data-tid="${t.id}" data-action="edit-count" title="Editar manualmente">${count}</span>
+                                        <button class="count-btn" data-tid="${t.id}" data-action="count-plus" title="+1">+</button>
+                                    </div>
+                                    ${t.notes ? `<span class="cliente-note" title="${attrEscape(t.notes)}">📝 ${escapeHtml(t.notes.length > 30 ? t.notes.slice(0,30)+'…' : t.notes)}</span>` : ''}
+                                    <button class="action-btn urgent-btn ${t.urgent ? 'active' : ''}" data-tid="${t.id}" data-action="toggle-urgent" title="${t.urgent ? 'Quitar urgente' : 'Marcar urgente'}">🚨</button>
+                                    <button class="action-btn note-btn ${t.notes ? 'active' : ''}" data-tid="${t.id}" data-action="edit-note" title="${t.notes ? 'Editar nota' : 'Agregar nota'}">📝</button>
+                                    <button class="action-btn delete-btn" data-tid="${t.id}" data-action="mark-done" title="Marcar como hecho">✓</button>
+                                </div>
+                                `;
+                            }).join('')}
+                            ${editorTasks.length === 0 ? '<span style="color: var(--text-dim); font-size: 13px; padding: 4px 0;">Sin pendientes</span>' : ''}
                         </div>
-                    `).join('')
-                );
-                // Bindings
-                list.querySelectorAll('.folder-row').forEach(row => {
-                    row.onclick = (ev) => {
-                        if (ev.target.closest('.enter-folder')) return;  // si tocó "Entrar", no seleccionar
-                        if (row.dataset.back) {
-                            FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
-                            loadDriveFolders('root');
-                            return;
+                        <div class="add-form">
+                            <input class="quick-task-input" placeholder="+ agregar cliente" data-editor="${attrEscape(e.name)}">
+                            <button data-editor="${attrEscape(e.name)}" data-action="add-quick">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const list = document.getElementById('editors-list');
+            list.innerHTML = html || '<div class="empty">No hay editores. Agregá abajo.</div>';
+
+            bindOverviewEvents();
+        }
+
+        function bindOverviewEvents() {
+            // Editor name/email edit
+            document.querySelectorAll('.editor-block .name-edit, .editor-block .editor-email').forEach(inp => {
+                inp.onblur = async () => {
+                    try {
+                        await api('PATCH', editorsUrl(), { id: inp.dataset.id, [inp.dataset.field]: inp.value.trim() });
+                        await loadAll();
+                    } catch (e) { toast(e.message, true); }
+                };
+                inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
+            });
+
+            // Action buttons (delegated)
+            document.querySelectorAll('.editor-block [data-action]').forEach(btn => {
+                btn.onclick = async () => {
+                    const action = btn.dataset.action;
+                    const tid = btn.dataset.tid;
+                    const eid = btn.dataset.id;
+                    const editorName = btn.dataset.editor;
+
+                    if (action === 'toggle-vacation') {
+                        const e = STATE.editors.find(x => x.id === eid);
+                        if (!e) return;
+                        await api('PATCH', editorsUrl(), { id: eid, on_vacation: !e.on_vacation });
+                        await loadAll();
+                        toast(e.on_vacation ? 'Editor activo' : 'Editor en vacaciones');
+                    }
+                    else if (action === 'del-editor') {
+                        if (!confirm('¿Borrar este editor?')) return;
+                        await api('DELETE', editorsUrl(`&id=${eid}`));
+                        await loadAll();
+                    }
+                    else if (action === 'toggle-urgent') {
+                        const t = STATE.tasks.find(x => x.id === tid);
+                        if (!t) return;
+                        await api('PATCH', tasksUrl(), { id: tid, urgent: !t.urgent });
+                        await loadAll();
+                    }
+                    else if (action === 'edit-note') {
+                        const t = STATE.tasks.find(x => x.id === tid);
+                        const note = prompt('Nota para este cliente:', t?.notes || '');
+                        if (note === null) return;
+                        await api('PATCH', tasksUrl(), { id: tid, notes: note });
+                        await loadAll();
+                    }
+                    else if (action === 'mark-done') {
+                        await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
+                        await loadAll();
+                    }
+                    else if (action === 'count-minus' || action === 'count-plus') {
+                        const t = STATE.tasks.find(x => x.id === tid);
+                        if (!t) return;
+                        const current = parseInt(t.pending_count) || 1;
+                        const delta = action === 'count-plus' ? 1 : -1;
+                        const next = Math.max(0, current + delta);
+                        if (next === 0) {
+                            // Llegó a 0 → marcar done
+                            await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
+                        } else {
+                            await api('PATCH', tasksUrl(), { id: tid, pending_count: next });
                         }
-                        // Seleccionar esta carpeta
-                        list.querySelectorAll('.folder-row').forEach(r => r.style.background = '');
-                        row.style.background = 'rgba(255, 107, 53, 0.15)';
-                        SELECTED_FOLDER = { id: row.dataset.id, name: row.dataset.name };
-                    };
-                });
-                list.querySelectorAll('.enter-folder').forEach(btn => {
-                    btn.onclick = (ev) => {
-                        ev.stopPropagation();
-                        const fid = btn.dataset.id;
-                        const row = btn.closest('.folder-row');
-                        FOLDER_PATH.push({ id: fid, name: row.dataset.name });
-                        loadDriveFolders(fid);
-                    };
-                });
-                // Breadcrumb
-                document.getElementById('folder-breadcrumb').textContent = FOLDER_PATH.map(p => p.name).join(' / ');
-            } catch (e) {
-                list.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`;
-            }
+                        await loadAll();
+                    }
+                    else if (action === 'edit-count') {
+                        const t = STATE.tasks.find(x => x.id === tid);
+                        const newCount = prompt('Cuántos pendientes:', t?.pending_count || 1);
+                        if (newCount === null) return;
+                        const n = parseInt(newCount);
+                        if (isNaN(n) || n < 0) return;
+                        if (n === 0) {
+                            await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
+                        } else {
+                            await api('PATCH', tasksUrl(), { id: tid, pending_count: n });
+                        }
+                        await loadAll();
+                    }
+                    else if (action === 'add-quick') {
+                        const input = btn.parentElement.querySelector('.quick-task-input');
+                        const client = input.value.trim();
+                        if (!client) return;
+                        await api('POST', tasksUrl(), { client, assignee: editorName });
+                        input.value = '';
+                        await loadAll();
+                    }
+                };
+            });
+
+            document.querySelectorAll('.quick-task-input').forEach(inp => {
+                inp.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        inp.parentElement.querySelector('button').click();
+                    }
+                };
+            });
+        }
+
+        // Drag & drop
+        window.onDragStart = (ev, tid) => {
+            DRAGGING_TASK_ID = tid;
+            ev.target.classList.add('dragging');
+            ev.dataTransfer.effectAllowed = 'move';
+        };
+        window.onDragEnd = (ev) => {
+            ev.target.classList.remove('dragging');
+            document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+            DRAGGING_TASK_ID = null;
+        };
+        window.onDropTask = async (ev, newAssignee) => {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('drop-target');
+            if (!DRAGGING_TASK_ID) return;
+            const t = STATE.tasks.find(x => x.id === DRAGGING_TASK_ID);
+            if (!t || t.assignee === newAssignee) return;
+            try {
+                await api('PATCH', tasksUrl(), { id: DRAGGING_TASK_ID, assignee: newAssignee });
+                await loadAll();
+                toast(`Reasignado a ${newAssignee}`);
+            } catch (e) { toast(e.message, true); }
+        };
+
+        function renderSettings() {
+            const p = STATE.profile;
+            document.getElementById('set-brand-name').value = p.brand_name || '';
+            document.getElementById('set-admin-email').value = p.admin_email || '';
+            document.getElementById('set-input-sing').value = p.input_singular || '';
+            document.getElementById('set-input-plural').value = p.input_plural || '';
+            document.getElementById('set-output-sing').value = p.output_singular || '';
+            document.getElementById('set-output-plural').value = p.output_plural || '';
+            document.getElementById('set-assignee-sing').value = p.assignee_singular || '';
+            document.getElementById('set-assignee-plural').value = p.assignee_plural || '';
         }
 
         function renderAssignments() {
@@ -551,155 +724,82 @@
             list.querySelectorAll('[data-action="del-assignment"]').forEach(btn => {
                 btn.onclick = async () => {
                     if (!confirm('¿Quitar esta carpeta?')) return;
-                    try {
-                        await api('DELETE', assignmentsUrl(`&folder_id=${encodeURIComponent(btn.dataset.fid)}`));
-                        const a = await api('GET', assignmentsUrl());
-                        ASSIGNMENTS = a.assignments || [];
-                        renderAssignments();
-                        toast('Quitada');
-                    } catch (e) { toast(e.message, true); }
+                    await api('DELETE', assignmentsUrl(`&folder_id=${encodeURIComponent(btn.dataset.fid)}`));
+                    ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || [];
+                    renderAssignments();
                 };
             });
         }
 
-        function render() {
-            const p = STATE.profile;
-            document.title = `${p.brand_name || 'Asistente'} — Dashboard`;
-            document.getElementById('nav-brand').textContent = p.brand_name || 'Asistente';
-            document.getElementById('nav-admin').textContent = p.brand_name || '—';
-            document.getElementById('nav-subtitle').textContent =
-                `${p.input_plural || 'archivos'} → ${p.output_plural || 'entregas'}`;
-            document.getElementById('welcome-title').textContent = `¡Bienvenido, ${p.brand_name || ''}!`;
-            document.getElementById('vocab-assignee').textContent = p.assignee_singular || 'editor';
-
-            // Drive info
-            document.getElementById('drive-email').textContent = p.google_email || '—';
-            document.getElementById('drive-folder').textContent = p.drive_mode === 'my_drive' ? 'Toda Mi Unidad' : (p.drive_url || '—');
-
-            renderOverview();
-            renderSettings();
-            renderAssignments();
-            // Llenar select de editores en el folder picker
-            const sel = document.getElementById('assign-editor');
-            if (sel) {
-                sel.innerHTML = STATE.editors.map(e =>
-                    `<option value="${attrEscape(e.id)}" data-name="${attrEscape(e.name)}">${escapeHtml(e.name)}</option>`
-                ).join('');
+        async function loadDriveFolders(parent = 'root') {
+            CURRENT_PARENT = parent;
+            const list = document.getElementById('folder-list');
+            list.innerHTML = '<div class="loading">Cargando carpetas…</div>';
+            try {
+                const r = await api('GET', driveFoldersUrl(parent));
+                const folders = r.folders || [];
+                const back = parent !== 'root' ? `<div class="folder-row" data-back="1" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-dim);">⬅️ Volver a Mi Unidad</div>` : '';
+                list.innerHTML = back + (folders.length === 0 ?
+                    '<div class="empty" style="padding: 20px;">Sin carpetas acá.</div>' :
+                    folders.map(f => `
+                        <div class="folder-row" data-id="${attrEscape(f.id)}" data-name="${attrEscape(f.name)}" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border);">
+                            <span>📁 ${escapeHtml(f.name)}</span>
+                            <button class="enter-folder" data-id="${attrEscape(f.id)}" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Entrar →</button>
+                        </div>
+                    `).join('')
+                );
+                list.querySelectorAll('.folder-row').forEach(row => {
+                    row.onclick = (ev) => {
+                        if (ev.target.closest('.enter-folder')) return;
+                        if (row.dataset.back) {
+                            FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
+                            loadDriveFolders('root');
+                            return;
+                        }
+                        list.querySelectorAll('.folder-row').forEach(r => r.style.background = '');
+                        row.style.background = 'rgba(255, 107, 53, 0.15)';
+                        SELECTED_FOLDER = { id: row.dataset.id, name: row.dataset.name };
+                    };
+                });
+                list.querySelectorAll('.enter-folder').forEach(btn => {
+                    btn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        const row = btn.closest('.folder-row');
+                        FOLDER_PATH.push({ id: btn.dataset.id, name: row.dataset.name });
+                        loadDriveFolders(btn.dataset.id);
+                    };
+                });
+                document.getElementById('folder-breadcrumb').textContent = FOLDER_PATH.map(p => p.name).join(' / ');
+            } catch (e) {
+                list.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
             }
         }
 
-        function renderOverview() {
-            const pending = STATE.tasks.filter(t => t.status !== 'done').length;
-            const done = STATE.tasks.filter(t => t.status === 'done').length;
-            const editorsCount = STATE.editors.length;
-
-            document.getElementById('stats').innerHTML = `
-                <div class="stat-card accent"><div class="label">Pendientes</div><div class="value">${pending}</div></div>
-                <div class="stat-card green"><div class="label">Hechos</div><div class="value">${done}</div></div>
-                <div class="stat-card"><div class="label">${escapeHtml(STATE.profile.assignee_plural || 'Editores')}</div><div class="value">${editorsCount}</div></div>
-            `;
-
-            // Bloque por cada editor con sus clientes pendientes (estilo Revolv)
-            const html = STATE.editors.map(e => {
-                const editorTasks = STATE.tasks.filter(t => t.assignee === e.name);
-                const pendingTasks = editorTasks.filter(t => t.status !== 'done');
-                return `
-                    <div class="editor-block" data-id="${e.id}">
-                        <h2>
-                            <span>
-                                <input class="name-edit" value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name">
-                                <span class="count">${pendingTasks.length} ${STATE.profile.project_plural || 'pendientes'}</span>
-                            </span>
-                            <button class="del-editor" data-id="${e.id}" title="Borrar este editor">✕</button>
-                        </h2>
-                        <input class="editor-email" placeholder="email del editor (opcional)" value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email">
-                        <div class="clientes-list">
-                            ${pendingTasks.map(t => `
-                                <div class="cliente-card" data-tid="${t.id}">
-                                    <span class="cliente-name">${escapeHtml(t.client || t.title || '—')}</span>
-                                    <button class="delete-btn" data-tid="${t.id}" title="Marcar como hecho">✓</button>
-                                </div>
-                            `).join('')}
-                            ${pendingTasks.length === 0 ? '<span style="color: var(--text-dim); font-size: 13px; padding: 4px 0;">Sin pendientes</span>' : ''}
-                        </div>
-                        <div class="add-form">
-                            <input class="quick-task-input" placeholder="+ agregar cliente / tarea" data-editor="${attrEscape(e.name)}">
-                            <button data-editor="${attrEscape(e.name)}" data-action="add-quick">+</button>
-                        </div>
-                    </div>
+        async function loadStats() {
+            try {
+                STATS = await api('GET', statsUrl());
+                const t = STATS.totals;
+                document.getElementById('stats-top').innerHTML = `
+                    <div class="stats-card"><div class="label">Total pendientes</div><div class="value">${t.total_pending}</div></div>
+                    <div class="stats-card"><div class="label">Urgentes</div><div class="value" style="color: var(--red);">${t.total_urgent}</div></div>
+                    <div class="stats-card"><div class="label">Entregados (7d)</div><div class="value" style="color: var(--green);">${t.delivered_week}</div></div>
+                    <div class="stats-card"><div class="label">Entregados (30d)</div><div class="value" style="color: var(--green);">${t.delivered_month}</div></div>
+                    <div class="stats-card"><div class="label">Editores activos</div><div class="value">${t.active_editors}</div></div>
+                    <div class="stats-card"><div class="label">De vacaciones</div><div class="value" style="color: var(--yellow);">${t.vacationing_editors}</div></div>
                 `;
-            }).join('');
-
-            const list = document.getElementById('editors-list');
-            list.innerHTML = html || '<div class="empty">No hay editores cargados. Tocá "+ Agregar editor" abajo.</div>';
-
-            // Bind events
-            list.querySelectorAll('.name-edit, .editor-email').forEach(inp => {
-                inp.onblur = async () => {
-                    try {
-                        await api('PATCH', editorsUrl(), {
-                            id: inp.dataset.id,
-                            [inp.dataset.field]: inp.value.trim(),
-                        });
-                        await loadAll();
-                        toast('Guardado');
-                    } catch (e) { toast(e.message, true); }
-                };
-                inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
-            });
-
-            list.querySelectorAll('.del-editor').forEach(btn => {
-                btn.onclick = async () => {
-                    if (!confirm('¿Borrar este editor?')) return;
-                    try {
-                        await api('DELETE', editorsUrl(`&id=${btn.dataset.id}`));
-                        await loadAll();
-                        toast('Editor borrado');
-                    } catch (e) { toast(e.message, true); }
-                };
-            });
-
-            list.querySelectorAll('.cliente-card .delete-btn').forEach(btn => {
-                btn.onclick = async () => {
-                    try {
-                        await api('PATCH', tasksUrl(), { id: btn.dataset.tid, status: 'done' });
-                        await loadAll();
-                    } catch (e) { toast(e.message, true); }
-                };
-            });
-
-            list.querySelectorAll('[data-action="add-quick"]').forEach(btn => {
-                btn.onclick = async () => {
-                    const editor = btn.dataset.editor;
-                    const input = btn.parentElement.querySelector('.quick-task-input');
-                    const client = input.value.trim();
-                    if (!client) return;
-                    try {
-                        await api('POST', tasksUrl(), { client, assignee: editor });
-                        input.value = '';
-                        await loadAll();
-                    } catch (e) { toast(e.message, true); }
-                };
-            });
-            list.querySelectorAll('.quick-task-input').forEach(inp => {
-                inp.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        inp.parentElement.querySelector('button').click();
-                    }
-                };
-            });
-        }
-
-        function renderSettings() {
-            const p = STATE.profile;
-            document.getElementById('set-brand-name').value = p.brand_name || '';
-            document.getElementById('set-admin-email').value = p.admin_email || '';
-            document.getElementById('set-input-sing').value = p.input_singular || '';
-            document.getElementById('set-input-plural').value = p.input_plural || '';
-            document.getElementById('set-output-sing').value = p.output_singular || '';
-            document.getElementById('set-output-plural').value = p.output_plural || '';
-            document.getElementById('set-assignee-sing').value = p.assignee_singular || '';
-            document.getElementById('set-assignee-plural').value = p.assignee_plural || '';
+                document.getElementById('stats-editors').innerHTML = STATS.by_editor.map(e => `
+                    <div class="editor-stats-row">
+                        <div class="name">${escapeHtml(e.name)} ${e.on_vacation ? '🌴' : ''}</div>
+                        <div class="metric primary"><span class="num">${e.pending_count}</span><span class="small">pend</span></div>
+                        <div class="metric"><span class="num" style="color: var(--red);">${e.urgent_count}</span><span class="small">urg</span></div>
+                        <div class="metric"><span class="num" style="color: var(--green);">${e.delivered_week}</span><span class="small">7d</span></div>
+                        <div class="metric"><span class="num" style="color: var(--green);">${e.delivered_month}</span><span class="small">30d</span></div>
+                        <div class="metric"><div class="health ${e.health}" title="Health: ${e.health}"></div></div>
+                    </div>
+                `).join('') || '<div class="empty">Sin editores</div>';
+            } catch (e) {
+                document.getElementById('stats-top').innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
+            }
         }
 
         // Tabs
@@ -709,6 +809,7 @@
                 document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
                 t.classList.add('active');
                 document.getElementById('view-' + t.dataset.view).classList.add('active');
+                if (t.dataset.view === 'stats') loadStats();
             };
         });
 
@@ -716,11 +817,8 @@
         document.getElementById('add-editor-btn').onclick = async () => {
             const name = prompt('Nombre del nuevo editor:');
             if (!name) return;
-            try {
-                await api('POST', editorsUrl(), { name, email: '' });
-                await loadAll();
-                toast('Editor agregado');
-            } catch (e) { toast(e.message, true); }
+            try { await api('POST', editorsUrl(), { name, email: '' }); await loadAll(); toast('Editor agregado'); }
+            catch (e) { toast(e.message, true); }
         };
 
         // Save settings
@@ -744,7 +842,7 @@
             finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
         };
 
-        // Folder picker buttons
+        // Folder picker
         document.getElementById('add-assignment-btn').onclick = () => {
             document.getElementById('folder-picker').style.display = 'block';
             document.getElementById('add-assignment-btn').style.display = 'none';
@@ -758,20 +856,17 @@
             SELECTED_FOLDER = null;
         };
         document.getElementById('confirm-assignment-btn').onclick = async () => {
-            if (!SELECTED_FOLDER) { toast('Seleccioná una carpeta primero (click en su nombre)', true); return; }
+            if (!SELECTED_FOLDER) { toast('Seleccioná una carpeta (click en su nombre)', true); return; }
             const sel = document.getElementById('assign-editor');
             const editor_id = sel.value;
             const editor_name = sel.options[sel.selectedIndex]?.dataset.name || '';
             if (!editor_id) { toast('Seleccioná un editor', true); return; }
             try {
                 await api('POST', assignmentsUrl(), {
-                    folder_id: SELECTED_FOLDER.id,
-                    folder_name: SELECTED_FOLDER.name,
-                    editor_id,
-                    editor_name,
+                    folder_id: SELECTED_FOLDER.id, folder_name: SELECTED_FOLDER.name,
+                    editor_id, editor_name,
                 });
-                const a = await api('GET', assignmentsUrl());
-                ASSIGNMENTS = a.assignments || [];
+                ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || [];
                 renderAssignments();
                 document.getElementById('folder-picker').style.display = 'none';
                 document.getElementById('add-assignment-btn').style.display = '';
@@ -779,7 +874,7 @@
             } catch (e) { toast(e.message, true); }
         };
 
-        // Welcome banner
+        // Welcome
         if (IS_WELCOME) document.getElementById('welcome').style.display = 'flex';
         document.getElementById('welcome-close').onclick = () => {
             document.getElementById('welcome').style.display = 'none';
@@ -788,7 +883,7 @@
 
         // Init
         if (!TENANT_ID || !TOKEN || TENANT_ID === 'dashboard.html') {
-            document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#888;"><h1 style="color:#fff;">Link inválido</h1><p>Falta tenant ID o token.</p></div>';
+            document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#888;"><h1 style="color:#fff;">Link inválido</h1></div>';
         } else {
             loadAll();
         }

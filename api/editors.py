@@ -98,6 +98,8 @@ class handler(BaseHTTPRequestHandler):
                     e["email"] = data["email"].strip().lower()
                 if "active" in data:
                     e["active"] = bool(data["active"])
+                if "on_vacation" in data:
+                    e["on_vacation"] = bool(data["on_vacation"])
                 updated = e
                 break
         if not updated:
