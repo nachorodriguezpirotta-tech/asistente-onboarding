@@ -1,0 +1,89 @@
+name: Provision Client (auto-deploy)
+
+# Se trigerea desde el backend (POST a workflow_dispatch API) cuando un cliente
+# termina el OAuth. Toma el pedido_id, descarga datos del KV, y corre el
+# provision.py que crea repo + deploya a Vercel + manda mail al cliente.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pedido_id:
+        description: 'ID del pedido a provisionar'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # para hacer push si hace falta
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout onboarding repo
+        uses: actions/checkout@v4
+
+      - name: Checkout template repo (asistente-template)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/asistente-template
+          path: template
+          token: ${{ secrets.GITHUB_PAT }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node (for Vercel CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Configure git
+        run: |
+          git config --global user.name "asistente-onboarding-bot"
+          git config --global user.email "bot@asistente.local"
+
+      - name: Authenticate gh CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_PAT }}
+        run: echo "${{ secrets.GITHUB_PAT }}" | gh auth login --with-token
+
+      - name: Run provision
+        env:
+          # Endpoint del onboarding (este mismo, para leer KV via admin API)
+          ONBOARDING_URL: ${{ secrets.ONBOARDING_URL }}
+          ONBOARDING_ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+
+          # Template path (clonado en step anterior)
+          TEMPLATE_DIR: ${{ github.workspace }}/template
+
+          # GitHub
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_PAT }}
+
+          # Vercel
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+          # Google OAuth (van como env vars al cliente)
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+
+          # Mail welcome al cliente
+          NOTIFY_MAIL_REFRESH_TOKEN: ${{ secrets.NOTIFY_MAIL_REFRESH_TOKEN }}
+          NOTIFY_MAIL_CLIENT_ID: ${{ secrets.NOTIFY_MAIL_CLIENT_ID }}
+          NOTIFY_MAIL_CLIENT_SECRET: ${{ secrets.NOTIFY_MAIL_CLIENT_SECRET }}
+
+          # CI mode
+          CI: 'true'
+          NON_INTERACTIVE: '1'
+          CLIENTS_BASE_DIR: ${{ github.workspace }}/clients
+        run: |
+          python3 provision.py "${{ inputs.pedido_id }}"

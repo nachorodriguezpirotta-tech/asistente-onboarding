@@ -191,10 +191,14 @@ def main():
     client_dir = Path(CLIENTS_BASE_DIR) / repo_name
 
     if client_dir.exists():
-        print(f"  ⚠️  Ya existe: {client_dir}")
-        if input("  ¿Sobrescribir? [y/N]: ").lower() != "y":
-            sys.exit(0)
-        shutil.rmtree(client_dir)
+        if os.environ.get("NON_INTERACTIVE") == "1":
+            print(f"  ⚠️  Ya existe: {client_dir} → sobrescribiendo (NON_INTERACTIVE)")
+            shutil.rmtree(client_dir)
+        else:
+            print(f"  ⚠️  Ya existe: {client_dir}")
+            if input("  ¿Sobrescribir? [y/N]: ").lower() != "y":
+                sys.exit(0)
+            shutil.rmtree(client_dir)
 
     client_dir.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(TEMPLATE_DIR, client_dir, ignore=shutil.ignore_patterns(
@@ -300,16 +304,26 @@ def main():
         run(["git", "init", "-b", "main"], cwd=client_dir)
         run(["git", "add", "."], cwd=client_dir)
         run(["git", "commit", "-m", "init: cliente provisionado por provision.py"], cwd=client_dir)
-        # Si el repo ya existe, ofrecer reemplazar
+        # Si el repo ya existe, comportamiento depende del modo
         check = subprocess.run(["gh", "repo", "view", f"{GITHUB_OWNER}/{repo_name}"], capture_output=True, text=True)
         if check.returncode == 0:
             print(f"  ⚠️  Repo ya existe: github.com/{GITHUB_OWNER}/{repo_name}")
-            ans = input("  ¿Borrar y recrear? [y/N]: ")
-            if ans.lower() == "y":
-                run(["gh", "repo", "delete", f"{GITHUB_OWNER}/{repo_name}", "--yes"])
+            if os.environ.get("NON_INTERACTIVE") == "1":
+                # En CI: usar un sufijo único en vez de borrar (más seguro)
+                import time as _t
+                repo_name = f"{repo_name}-{int(_t.time())}"
+                dashboard_url = f"https://{repo_name}.vercel.app"
+                env_vars["GITHUB_REPO"] = repo_name
+                env_vars["GITHUB_REPO_FULL"] = f"{GITHUB_OWNER}/{repo_name}"
+                env_vars["DASHBOARD_URL"] = dashboard_url
+                print(f"  → Usando nombre único: {repo_name}")
             else:
-                print("  Abortado.")
-                sys.exit(1)
+                ans = input("  ¿Borrar y recrear? [y/N]: ")
+                if ans.lower() == "y":
+                    run(["gh", "repo", "delete", f"{GITHUB_OWNER}/{repo_name}", "--yes"])
+                else:
+                    print("  Abortado.")
+                    sys.exit(1)
         run(["gh", "repo", "create", f"{GITHUB_OWNER}/{repo_name}",
              "--private", "--source=.", "--push"], cwd=client_dir)
         print(f"  ✓ github.com/{GITHUB_OWNER}/{repo_name}")

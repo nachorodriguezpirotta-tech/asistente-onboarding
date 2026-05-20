@@ -14,8 +14,8 @@ from _shared import kv_get, json_response
 # Estados que el cliente puede ver
 STATUS_LABELS = {
     "pending_oauth":  {"label": "Esperando que conectes Google", "progress": 25},
-    "oauth_done":     {"label": "Recibimos tu pedido — Nacho lo va a configurar", "progress": 50},
-    "provisioning":   {"label": "Nacho está configurando tu sistema ahora", "progress": 75},
+    "oauth_done":     {"label": "Recibimos tu pedido", "progress": 40},
+    "provisioning":   {"label": "Armando tu sistema (creando repo, deployando)…", "progress": 75},
     "deployed":       {"label": "¡Listo! Revisá tu mail con el link", "progress": 100},
     "failed":         {"label": "Hubo un problema. Te contactamos por mail.", "progress": 0},
 }
