@@ -354,7 +354,25 @@ def main():
     if dry_run:
         print(f"  [DRY-RUN] {' '.join(vercel_bin)} link + env add + --prod")
     else:
-        run(vercel_cmd + ["link", "--yes", "--project", repo_name], cwd=client_dir)
+        # Vercel link (con retry si falla)
+        for attempt in range(3):
+            r = subprocess.run(
+                vercel_cmd + ["link", "--yes", "--project", repo_name],
+                cwd=client_dir, capture_output=True, text=True,
+            )
+            if r.returncode == 0:
+                break
+            if "Resource is limited" in r.stderr or "more than 100" in r.stderr:
+                print(f"  ⚠️  Vercel rate-limited. Marcando pedido como 'queued_vercel' para retry futuro.")
+                update_pedido(pedido_id, {"status": "queued_vercel", "vercel_error": r.stderr[:200]})
+                sys.exit(2)  # exit code especial: rate limit, no es fallo permanente
+            if attempt < 2:
+                print(f"  ⚠️  vercel link falló (attempt {attempt+1}/3), retry en {(attempt+1)*5}s")
+                import time as _t; _t.sleep((attempt+1)*5)
+            else:
+                raise RuntimeError(f"vercel link falló: {r.stderr[:200]}")
+
+        # Setear env vars (silencioso si ya existen)
         for k, v in env_vars.items():
             if not v:
                 continue
@@ -362,8 +380,25 @@ def main():
                 vercel_cmd + ["env", "add", k, "production"],
                 input=str(v), text=True, capture_output=True, cwd=client_dir,
             )
-        run(vercel_cmd + ["--prod", "--yes"], cwd=client_dir)
-        print(f"  ✓ Deployado a {dashboard_url}")
+
+        # Deploy con retry
+        for attempt in range(3):
+            r = subprocess.run(
+                vercel_cmd + ["--prod", "--yes"],
+                cwd=client_dir, capture_output=True, text=True,
+            )
+            if r.returncode == 0:
+                print(f"  ✓ Deployado a {dashboard_url}")
+                break
+            if "Resource is limited" in r.stderr:
+                print(f"  ⚠️  Vercel rate-limited en deploy. Marcando 'queued_vercel'.")
+                update_pedido(pedido_id, {"status": "queued_vercel", "vercel_error": r.stderr[:200]})
+                sys.exit(2)
+            if attempt < 2:
+                print(f"  ⚠️  deploy falló (attempt {attempt+1}/3): {r.stderr[:100]}")
+                import time as _t; _t.sleep((attempt+1)*10)
+            else:
+                raise RuntimeError(f"vercel deploy falló: {r.stderr[:200]}")
 
     # ─── 7. Actualizar pedido (status: deployed) ─────────────────────────────
     step(7, TOTAL, "Actualizando estado del pedido")

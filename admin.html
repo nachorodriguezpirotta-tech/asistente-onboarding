@@ -90,6 +90,7 @@
     .badge.pending_oauth { background: rgba(255, 165, 0, 0.15); color: #ffa500; }
     .badge.oauth_done { background: rgba(33, 150, 243, 0.15); color: #4ba0f5; }
     .badge.provisioning { background: rgba(156, 39, 176, 0.15); color: #c66ce0; }
+    .badge.queued_vercel { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
     .badge.deployed { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
     .badge.failed { background: rgba(244, 67, 54, 0.15); color: #f44336; }
 
@@ -156,6 +157,7 @@
         <option value="pending_oauth">Pending OAuth</option>
         <option value="oauth_done">OAuth done (esperando provision)</option>
         <option value="provisioning">Provisionando</option>
+        <option value="queued_vercel">En cola por Vercel rate-limit</option>
         <option value="deployed">Deployed</option>
         <option value="failed">Failed</option>
       </select>
@@ -238,12 +240,14 @@
       const stats = {
         total: DATA.length,
         pending: DATA.filter(p => p.status === 'oauth_done').length,
+        queued: DATA.filter(p => p.status === 'queued_vercel').length,
         deployed: DATA.filter(p => p.status === 'deployed').length,
         failed: DATA.filter(p => p.status === 'failed').length,
       };
       document.getElementById('stats').innerHTML = `
-        <div class="stat"><div class="label">Total pedidos</div><div class="value">${stats.total}</div></div>
-        <div class="stat danger"><div class="label">Esperando que les deployes</div><div class="value">${stats.pending}</div></div>
+        <div class="stat"><div class="label">Total</div><div class="value">${stats.total}</div></div>
+        <div class="stat danger"><div class="label">Esperan provision</div><div class="value">${stats.pending}</div></div>
+        <div class="stat warn"><div class="label">En cola Vercel</div><div class="value">${stats.queued}</div></div>
         <div class="stat good"><div class="label">Deployados</div><div class="value">${stats.deployed}</div></div>
         <div class="stat warn"><div class="label">Failed</div><div class="value">${stats.failed}</div></div>
       `;
@@ -257,8 +261,8 @@
       const rows = filtered.map(p => {
         const created = p.created_at ? new Date(p.created_at).toLocaleString('es-AR') : '—';
         const actions = [];
-        if (p.status === 'oauth_done' || p.status === 'failed') {
-          actions.push(`<button class="copy-cmd" onclick="triggerProvision('${p.id}')">🚀 Provisionar ahora</button>`);
+        if (p.status === 'oauth_done' || p.status === 'failed' || p.status === 'queued_vercel') {
+          actions.push(`<button class="copy-cmd" onclick="triggerProvision('${p.id}')">🚀 Reintentar</button>`);
         }
         if (p.status === 'provisioning') {
           actions.push(`<a href="https://github.com/nachorodriguezpirotta-tech/asistente-onboarding/actions" target="_blank">⚙️ Ver workflow</a>`);

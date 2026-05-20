@@ -280,6 +280,7 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
             "/privacy": "/privacy.html",
             "/terms": "/terms.html",
             "/mi-pedido": "/mi-pedido.html",
+            "/pricing": "/pricing.html",
         }
         if self.path in mapping:
             self.path = mapping[self.path]

@@ -14,8 +14,9 @@ from _shared import kv_get, _kv_request, json_response
 # Mismas labels que /api/status
 STATUS_LABELS = {
     "pending_oauth":  "Esperando que conectes Google",
-    "oauth_done":     "Recibimos tu pedido — Nacho lo va a configurar",
-    "provisioning":   "Nacho está configurando tu sistema ahora",
+    "oauth_done":     "Recibimos tu pedido",
+    "provisioning":   "Armando tu sistema",
+    "queued_vercel":  "En cola para deploy (~1-2h)",
     "deployed":       "¡Listo! Revisá tu mail con el link",
     "failed":         "Hubo un problema. Te contactamos por mail.",
 }

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Precios · Asistente</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e5e5e5; line-height: 1.6; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    nav { padding: 20px 0; border-bottom: 1px solid #1a1a1a; }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    nav .logo { font-weight: 800; font-size: 18px; color: #fff; }
+    nav .logo span { color: #ff6b35; }
+    nav a { color: #a0a0a0; text-decoration: none; font-size: 14px; margin-left: 24px; }
+    nav a:hover { color: #fff; }
+
+    .hero { padding: 80px 0 40px; text-align: center; }
+    h1 { font-size: clamp(36px, 5vw, 52px); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 16px; }
+    h1 .accent { background: linear-gradient(135deg, #ff6b35, #ff9558); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { color: #a0a0a0; font-size: 18px; max-width: 580px; margin: 0 auto; }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 40px 0 80px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .plan {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+    }
+    .plan.featured {
+      border-color: #ff6b35;
+      box-shadow: 0 0 60px -20px rgba(255, 107, 53, 0.5);
+    }
+    .plan.featured::before {
+      content: "Más popular";
+      position: absolute;
+      top: -12px; right: 24px;
+      background: #ff6b35; color: #fff;
+      padding: 4px 14px; border-radius: 100px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .plan h3 { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .plan .price { font-size: 40px; font-weight: 800; color: #fff; margin: 16px 0 4px; letter-spacing: -0.02em; }
+    .plan .price small { font-size: 16px; color: #888; font-weight: 500; }
+    .plan .target { color: #a0a0a0; font-size: 13px; margin-bottom: 24px; }
+    .plan ul { list-style: none; margin: 24px 0; }
+    .plan li { padding: 6px 0 6px 28px; position: relative; color: #c0c0c0; font-size: 14px; }
+    .plan li::before { content: "✓"; position: absolute; left: 0; color: #4caf50; font-weight: 700; }
+    .plan .cta {
+      display: block;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      margin-top: 16px;
+      border: 1px solid #2a2a2a;
+    }
+    .plan.featured .cta { background: #ff6b35; border-color: #ff6b35; }
+    .plan .cta:hover { background: #ff5219; border-color: #ff5219; }
+    .plan:not(.featured) .cta:hover { background: #262626; }
+
+    .faq-section { padding: 60px 0; background: #0f0f0f; }
+    .faq-section h2 { color: #fff; font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 32px; letter-spacing: -0.01em; }
+    .faq-list { max-width: 640px; margin: 0 auto; }
+    .faq-q { background: #141414; border: 1px solid #262626; border-radius: 10px; padding: 16px 20px; margin-bottom: 10px; }
+    .faq-q strong { color: #fff; display: block; margin-bottom: 6px; font-size: 15px; }
+    .faq-q span { color: #a0a0a0; font-size: 14px; }
+
+    .footer-cta { text-align: center; padding: 80px 0; }
+    .footer-cta a {
+      display: inline-block; background: #ff6b35; color: #fff;
+      padding: 18px 36px; border-radius: 12px;
+      text-decoration: none; font-weight: 700; font-size: 17px;
+    }
+    .footer-cta a:hover { background: #ff5219; }
+
+    footer { padding: 40px 0 60px; text-align: center; color: #555; font-size: 13px; border-top: 1px solid #1a1a1a; }
+    footer a { color: #888; text-decoration: none; margin: 0 12px; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a href="/" style="text-decoration:none;"><div class="logo">Asistente<span>.</span></div></a>
+      <div>
+        <a href="/#como">Cómo funciona</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/start">Empezar</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Precios <span class="accent">simples</span></h1>
+      <p class="subtitle">Empezás gratis 30 días. Si te sirve, sigás según el tamaño de tu equipo.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="plans">
+
+        <div class="plan">
+          <h3>Solo / Piloto</h3>
+          <p class="target">Para probar el sistema</p>
+          <div class="price">Gratis<small></small></div>
+          <p style="color:#888; font-size:13px;">30 días, sin tarjeta de crédito</p>
+          <ul>
+            <li>1 admin + hasta 3 responsables</li>
+            <li>Watch automático de tu Drive</li>
+            <li>Notificaciones mail + push</li>
+            <li>Resúmenes diarios y semanales</li>
+            <li>Dashboard PWA</li>
+            <li>Soporte por mail</li>
+          </ul>
+          <a href="/start" class="cta">Empezar gratis</a>
+        </div>
+
+        <div class="plan featured">
+          <h3>Equipo</h3>
+          <p class="target">Para agencias chicas y medianas</p>
+          <div class="price">$49<small>/mes</small></div>
+          <p style="color:#888; font-size:13px;">Después del piloto</p>
+          <ul>
+            <li>Hasta 10 responsables</li>
+            <li>Todo del plan gratis +</li>
+            <li>Notificaciones push ilimitadas</li>
+            <li>Múltiples carpetas de Drive</li>
+            <li>Workflows custom por proyecto</li>
+            <li>Soporte priority por WhatsApp</li>
+          </ul>
+          <a href="/start" class="cta">Empezar piloto</a>
+        </div>
+
+        <div class="plan">
+          <h3>Agencia</h3>
+          <p class="target">Para equipos grandes</p>
+          <div class="price">$149<small>/mes</small></div>
+          <p style="color:#888; font-size:13px;">o conversemos custom</p>
+          <ul>
+            <li>Responsables ilimitados</li>
+            <li>Todo del plan Equipo +</li>
+            <li>Múltiples brands / sub-agencias</li>
+            <li>API access</li>
+            <li>Custom integrations (Slack, etc.)</li>
+            <li>Onboarding personalizado por Nacho</li>
+          </ul>
+          <a href="mailto:nacho.rodriguezpirotta@gmail.com?subject=Plan%20Agencia%20Asistente" class="cta">Conversemos</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="faq-section">
+    <div class="container">
+      <h2>Preguntas frecuentes sobre el precio</h2>
+      <div class="faq-list">
+        <div class="faq-q">
+          <strong>¿Hay límite de uso en el plan gratis?</strong>
+          <span>Sí. 30 días o hasta 3 responsables / 5 proyectos activos. Después, podés seguir gratis si tu equipo es chico, o subir al plan Equipo.</span>
+        </div>
+        <div class="faq-q">
+          <strong>¿Puedo cancelar cuando quiera?</strong>
+          <span>Sí, sin penalidad. Cancelás revocando los permisos de Google y nos avisás por mail. Borramos todos tus datos en 24h.</span>
+        </div>
+        <div class="faq-q">
+          <strong>¿Hay setup fee?</strong>
+          <span>No. La implementación es self-service en 5-10 min.</span>
+        </div>
+        <div class="faq-q">
+          <strong>¿Aceptan transferencia / Mercado Pago?</strong>
+          <span>Sí, para Argentina. Por mail coordinamos.</span>
+        </div>
+        <div class="faq-q">
+          <strong>¿Hay descuento anual?</strong>
+          <span>Sí — 2 meses gratis si pagás anual.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="footer-cta">
+    <div class="container">
+      <h2 style="color:#fff; font-size:32px; font-weight:800; margin-bottom:16px;">Empezá gratis ahora</h2>
+      <p style="color:#a0a0a0; margin-bottom:32px;">Sin tarjeta. Sin compromiso. 5 minutos al setup.</p>
+      <a href="/start">Configurar mi sistema →</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <a href="/privacy">Privacidad</a> ·
+      <a href="/terms">Términos</a> ·
+      <a href="/mi-pedido">Consultar mi pedido</a>
+      <br><br>
+      © Asistente · Sistema de seguimiento de proyectos para agencias
+    </div>
+  </footer>
+</body>
+</html>

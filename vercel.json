@@ -7,7 +7,8 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/mi-pedido", "destination": "/mi-pedido.html" }
+    { "source": "/mi-pedido", "destination": "/mi-pedido.html" },
+    { "source": "/pricing", "destination": "/pricing.html" }
   ],
   "functions": {
     "api/*.py": { "memory": 256, "maxDuration": 10 }

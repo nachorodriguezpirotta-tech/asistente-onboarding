@@ -16,6 +16,7 @@ STATUS_LABELS = {
     "pending_oauth":  {"label": "Esperando que conectes Google", "progress": 25},
     "oauth_done":     {"label": "Recibimos tu pedido", "progress": 40},
     "provisioning":   {"label": "Armando tu sistema (creando repo, deployando)…", "progress": 75},
+    "queued_vercel":  {"label": "En cola — el deploy va a iniciar automáticamente apenas haya capacidad disponible (~1-2h)", "progress": 80},
     "deployed":       {"label": "¡Listo! Revisá tu mail con el link", "progress": 100},
     "failed":         {"label": "Hubo un problema. Te contactamos por mail.", "progress": 0},
 }

@@ -1,0 +1,49 @@
+name: Retry Pedidos Queued (Vercel rate-limit recovery)
+
+# Corre cada hora — busca pedidos que quedaron en estado 'queued_vercel'
+# (por rate-limit de Vercel) y los re-dispara para deploy.
+
+on:
+  schedule:
+    - cron: '15 * * * *'   # cada hora al minuto 15
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write     # para disparar otros workflows
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Buscar pedidos queued_vercel y re-disparar
+        env:
+          ONBOARDING_URL: ${{ secrets.ONBOARDING_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GH_TOKEN: ${{ secrets.PROVISION_GH_PAT }}
+        run: |
+          # Listar pedidos del admin
+          PEDIDOS=$(curl --max-time 10 -s "$ONBOARDING_URL/api/admin_list?t=$ADMIN_TOKEN" \
+            | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          for p in d.get('pedidos', []):
+              if p.get('status') == 'queued_vercel':
+                  print(p['id'])
+          ")
+
+          if [ -z "$PEDIDOS" ]; then
+            echo "✓ No hay pedidos queued_vercel — nada que hacer"
+            exit 0
+          fi
+
+          for PID in $PEDIDOS; do
+            echo "→ Re-disparando provision para $PID"
+            gh workflow run provision_client.yml \
+              --repo ${{ github.repository }} \
+              --field pedido_id=$PID
+            sleep 5
+          done
+          echo "✓ Reintentos disparados"
