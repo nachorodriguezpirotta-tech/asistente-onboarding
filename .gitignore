@@ -14,3 +14,4 @@ __pycache__/
 
 # Node (si llegamos a usarlo)
 node_modules/
+.dev_kv.json
