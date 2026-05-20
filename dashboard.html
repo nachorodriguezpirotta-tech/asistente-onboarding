@@ -350,7 +350,11 @@
                 <h3>Carpetas vinculadas a editores</h3>
                 <p class="hint">Asigná una carpeta de Drive a cada editor. Cuando aparezca un archivo nuevo ahí, se crea automáticamente una tarea para ese editor.</p>
                 <div id="assignments-list"></div>
-                <button class="action-btn-main" id="add-assignment-btn" style="margin-top: 12px;">+ Vincular nueva carpeta</button>
+                <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                    <button class="action-btn-main" id="add-assignment-btn">+ Vincular nueva carpeta</button>
+                    <button class="action-link" id="scan-now-btn">🔄 Escanear Drive ahora</button>
+                </div>
+                <div id="scan-result" style="margin-top: 10px;"></div>
 
                 <div id="folder-picker" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
                     <label style="color: var(--text); font-size: 13px; margin-bottom: 6px; display: block;">📎 Pegá el link de la carpeta de Drive</label>
@@ -466,6 +470,7 @@
         const driveFoldersUrl = (parent = 'root') => `/api/drive_folders?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}&parent=${encodeURIComponent(parent)}`;
         const driveFolderInfoUrl = (fid) => `/api/drive_folder_info?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}&folder_id=${encodeURIComponent(fid)}`;
         const assignmentsUrl = (extra = '') => `/api/folder_assignments?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+        const scanDriveUrl = () => `/api/scan_drive?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const aliasesUrl = (extra = '') => `/api/aliases?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
 
         async function loadAll() {
@@ -1067,6 +1072,31 @@
 
         // Botón "Cargar mis carpetas" del details (alternativa)
         document.getElementById('load-folders-btn').onclick = () => loadDriveFolders('root');
+
+        // ── ESCANEAR DRIVE AHORA ──
+        document.getElementById('scan-now-btn').onclick = async () => {
+            const btn = document.getElementById('scan-now-btn');
+            const result = document.getElementById('scan-result');
+            btn.disabled = true; btn.textContent = '⏳ Escaneando…';
+            result.innerHTML = '';
+            try {
+                const r = await api('POST', scanDriveUrl());
+                let msg = '';
+                if (r.new_tasks > 0) {
+                    msg = `<div style="background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--green); font-size: 13px;">✅ ${r.new_tasks} tarea${r.new_tasks > 1 ? 's' : ''} nueva${r.new_tasks > 1 ? 's' : ''} creada${r.new_tasks > 1 ? 's' : ''} desde Drive · ${r.scanned_folders} carpetas escaneadas</div>`;
+                    await loadAll();
+                } else {
+                    msg = `<div style="background: var(--bg-card-2); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; color: var(--text-dim); font-size: 13px;">✓ Escaneadas ${r.scanned_folders} carpeta${r.scanned_folders !== 1 ? 's' : ''}. Sin archivos nuevos.</div>`;
+                }
+                if (r.errors && r.errors.length) {
+                    msg += `<div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--red); font-size: 12px; margin-top: 6px;">⚠️ Errores: ${r.errors.join(', ')}</div>`;
+                }
+                result.innerHTML = msg;
+            } catch (e) {
+                result.innerHTML = `<div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--red); font-size: 13px;">❌ ${escapeHtml(e.message)}</div>`;
+            }
+            btn.disabled = false; btn.textContent = '🔄 Escanear Drive ahora';
+        };
 
         // Init
         if (!TENANT_ID || !TOKEN || TENANT_ID === 'dashboard.html') {

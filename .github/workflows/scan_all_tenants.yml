@@ -1,0 +1,80 @@
+name: Scan Drive (todos los tenants)
+
+# Cada 5 min: recorre todos los tenants, escanea sus carpetas vinculadas en Drive,
+# crea tareas automáticas para los archivos nuevos.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'    # cada 5 minutos
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Scan todos los tenants
+        env:
+          ONBOARDING_URL: ${{ secrets.ONBOARDING_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          DASHBOARD_SECRET: ${{ secrets.DASHBOARD_SECRET }}
+        run: |
+          # Listar todos los tenants vía admin endpoint
+          # (Por ahora reutilizamos /api/admin_list pero filtramos por status)
+          # NOTA: este workflow asume que ONBOARDING_URL apunta a un server público
+          # con acceso al KV. En dev local, llamar manualmente.
+
+          if [ -z "$ONBOARDING_URL" ] || [ -z "$ADMIN_TOKEN" ] || [ -z "$DASHBOARD_SECRET" ]; then
+            echo "⚠️  Faltan ONBOARDING_URL / ADMIN_TOKEN / DASHBOARD_SECRET — skip"
+            exit 0
+          fi
+
+          python3 <<'PYEOF'
+          import os, json, hmac, hashlib
+          import urllib.request, urllib.parse
+
+          URL = os.environ["ONBOARDING_URL"].rstrip("/")
+          ADMIN = os.environ["ADMIN_TOKEN"]
+          SECRET = os.environ["DASHBOARD_SECRET"]
+
+          def make_token(tid):
+              return hmac.new(SECRET.encode(), tid.encode(), hashlib.sha256).hexdigest()[:24]
+
+          # admin_list devuelve PEDIDOS (no tenants). Para tenants, necesitamos
+          # una API admin que liste tenants. Por ahora, lo simulamos: cada pedido
+          # con OAuth completo SE TRANSFORMÓ en tenant con el mismo ID.
+          req = urllib.request.Request(f"{URL}/api/admin_list?t={urllib.parse.quote(ADMIN)}")
+          try:
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  data = json.load(r)
+          except Exception as e:
+              print(f"❌ admin_list failed: {e}")
+              exit(0)
+
+          pedidos = data.get("pedidos", [])
+          # Filtrar los que tienen oauth completo (transformados en tenants)
+          tenant_ids = [p["id"] for p in pedidos if p.get("has_oauth")]
+          print(f"📋 {len(tenant_ids)} tenants con OAuth → escaneando")
+
+          total_new = 0
+          for tid in tenant_ids:
+              token = make_token(tid)
+              try:
+                  req = urllib.request.Request(
+                      f"{URL}/api/scan_drive?tenant={tid}&t={token}", method="POST"
+                  )
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      resp = json.load(r)
+                  new = resp.get("new_tasks", 0)
+                  if new > 0:
+                      print(f"  ✓ {tid}: {new} tareas nuevas")
+                      total_new += new
+              except Exception as e:
+                  print(f"  ⚠️  {tid}: {e}")
+
+          print(f"\n✅ Escaneo completo. {total_new} tareas nuevas en total.")
+          PYEOF
