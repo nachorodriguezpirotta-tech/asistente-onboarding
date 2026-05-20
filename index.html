@@ -289,6 +289,7 @@
         <a href="#como">Cómo funciona</a>
         <a href="#verticals">Para quién</a>
         <a href="/pricing">Precios</a>
+        <a href="/about">Sobre</a>
         <a href="#faq">FAQ</a>
         <a href="/start" class="cta-nav">Empezar</a>
       </div>
@@ -408,6 +409,23 @@
     </div>
   </section>
 
+  <section>
+    <div class="container" style="max-width: 880px;">
+      <div class="section-head">
+        <h2>Mirá cómo funciona en 60 segundos</h2>
+        <p class="subtitle">Un cliente subiendo material → el editor recibiendo notificación → el dashboard llenándose</p>
+      </div>
+      <div style="position: relative; padding-bottom: 56.25%; height: 0; border-radius: 16px; overflow: hidden; background: #141414; border: 1px solid #262626;">
+        <!-- Reemplazar src con tu video real cuando lo grabes (Loom o YouTube embed) -->
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;">
+          <div style="width: 80px; height: 80px; background: rgba(255, 107, 53, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px;">▶</div>
+          <p style="color: #888; font-size: 14px;">Video demo próximamente</p>
+          <p style="color: #555; font-size: 12px;">(Mientras tanto, podés probar el wizard arriba)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="alt">
     <div class="container">
       <div class="section-head">
@@ -474,13 +492,24 @@
       <h2 style="margin-bottom: 16px;">Empezá gratis hoy</h2>
       <p>Sin tarjeta. Sin compromiso. Cancelás cuando quieras.</p>
       <a href="/start" class="cta">Configurar mi sistema →</a>
-      <p class="small">Tarda 1 minuto el setup. En 30 min tenés el link de tu sistema andando.</p>
+      <p class="small">Tarda 1 minuto el setup. En 5-10 min tenés el link de tu sistema andando.</p>
+
+      <div style="margin-top: 64px; padding: 32px; background: #141414; border: 1px solid #262626; border-radius: 16px; max-width: 520px; margin-left: auto; margin-right: auto;">
+        <h3 style="color: #fff; font-size: 18px; font-weight: 700; margin-bottom: 8px;">¿No te animás todavía?</h3>
+        <p style="color: #a0a0a0; font-size: 14px; margin-bottom: 16px;">Dejame tu mail y te aviso cuando saquemos novedades. Sin spam.</p>
+        <div style="display: flex; gap: 8px;">
+          <input type="email" id="wl-email" placeholder="tu@email.com" style="flex: 1; background: #0a0a0a; border: 1px solid #2a2a2a; color: #fff; padding: 12px 14px; border-radius: 8px; font-size: 15px; font-family: inherit;">
+          <button id="wl-btn" style="background: #ff6b35; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;">Anotarme</button>
+        </div>
+        <div id="wl-result" style="margin-top: 8px; font-size: 13px;"></div>
+      </div>
     </div>
   </section>
 
   <footer>
     <div class="container">
       <a href="/pricing">Precios</a> ·
+      <a href="/about">Sobre</a> ·
       <a href="/privacy">Privacidad</a> ·
       <a href="/terms">Términos</a> ·
       <a href="/mi-pedido">Consultar mi pedido</a>
@@ -493,6 +522,43 @@
     document.querySelectorAll('.faq-item').forEach(item => {
       item.querySelector('.faq-q').onclick = () => item.classList.toggle('open');
     });
+
+    // Waitlist
+    document.getElementById('wl-btn').onclick = async () => {
+      const email = document.getElementById('wl-email').value.trim();
+      const r = document.getElementById('wl-result');
+      if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+        r.innerHTML = '<span style="color:#ff8080;">Email inválido</span>';
+        return;
+      }
+      const btn = document.getElementById('wl-btn');
+      btn.disabled = true; btn.textContent = 'Guardando...';
+      try {
+        const res = await fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source: 'landing' }),
+        });
+        if (!res.ok) throw new Error('Error');
+        r.innerHTML = '<span style="color:#4caf50;">✓ Listo, te avisamos cuando haya novedades</span>';
+        document.getElementById('wl-email').value = '';
+        // Track event
+        try { fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({event:'waitlist_signup'}) }); } catch(_) {}
+      } catch(e) {
+        r.innerHTML = '<span style="color:#ff8080;">Hubo un problema, intentá de nuevo</span>';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Anotarme';
+      }
+    };
+
+    // Tracking: page view
+    try {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'pageview', path: '/' }),
+      });
+    } catch (_) {}
   </script>
 
 </body>

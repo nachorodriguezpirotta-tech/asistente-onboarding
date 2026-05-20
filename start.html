@@ -267,6 +267,12 @@
       presetsEl.appendChild(div);
     });
 
+    // Track wizard_start
+    try {
+      fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({event:'wizard_start'}) });
+    } catch(_) {}
+
     // Mostrar warning si volvió de OAuth cancelado
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('error') === 'denied') {

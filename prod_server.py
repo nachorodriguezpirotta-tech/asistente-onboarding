@@ -56,8 +56,11 @@ API_ROUTES = {
     "/api/admin_get": "admin_get",
     "/api/admin_list": "admin_list",
     "/api/admin_trigger": "admin_trigger",
+    "/api/admin_stats": "admin_stats",
     "/api/status": "status",
     "/api/lookup": "lookup",
+    "/api/waitlist": "waitlist",
+    "/api/track": "track",
 }
 
 
@@ -106,6 +109,7 @@ class ProdHandler(http.server.SimpleHTTPRequestHandler):
             "/terms": "/terms.html",
             "/mi-pedido": "/mi-pedido.html",
             "/pricing": "/pricing.html",
+            "/about": "/about.html",
         }
         if self.path in mapping:
             self.path = mapping[self.path]

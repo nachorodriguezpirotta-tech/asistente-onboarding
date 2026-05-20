@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre Asistente · Hecho por una agencia para agencias</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e5e5e5; line-height: 1.7; }
+    .container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+    nav { padding: 20px 0; border-bottom: 1px solid #1a1a1a; }
+    nav .container { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; }
+    nav .logo { font-weight: 800; font-size: 18px; color: #fff; }
+    nav .logo span { color: #ff6b35; }
+    nav .links a { color: #a0a0a0; text-decoration: none; font-size: 14px; margin-left: 24px; }
+    nav .links a:hover { color: #fff; }
+
+    .hero { padding: 80px 0 40px; text-align: center; }
+    h1 { font-size: clamp(36px, 5vw, 56px); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 16px; line-height: 1.1; }
+    h1 .accent { background: linear-gradient(135deg, #ff6b35, #ff9558); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .lede { color: #a0a0a0; font-size: 19px; max-width: 600px; margin: 0 auto; }
+
+    section { padding: 60px 0; }
+    section h2 { color: #fff; font-size: 28px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 16px; }
+    section h3 { color: #fff; font-size: 18px; font-weight: 700; margin: 32px 0 8px; }
+    section p { color: #c0c0c0; font-size: 16px; margin-bottom: 16px; }
+    section ul { padding-left: 24px; margin: 8px 0 16px; color: #c0c0c0; }
+    section li { margin-bottom: 8px; }
+    section strong { color: #fff; }
+
+    .card {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 16px;
+      padding: 32px;
+      margin: 32px 0;
+    }
+    .card .stat { display: flex; gap: 24px; flex-wrap: wrap; margin: 16px 0; }
+    .card .stat div { flex: 1; min-width: 140px; }
+    .card .stat .num { font-size: 32px; font-weight: 800; color: #ff6b35; display: block; }
+    .card .stat .label { color: #888; font-size: 13px; }
+
+    .quote {
+      background: #141414;
+      border-left: 3px solid #ff6b35;
+      padding: 24px 28px;
+      border-radius: 8px;
+      margin: 32px 0;
+    }
+    .quote p { color: #fff; font-style: italic; font-size: 17px; margin-bottom: 12px; }
+    .quote .author { color: #888; font-size: 13px; }
+
+    .cta-section { text-align: center; padding: 80px 0 100px; }
+    .cta-section a {
+      display: inline-block;
+      background: #ff6b35; color: #fff;
+      padding: 18px 36px; border-radius: 12px;
+      text-decoration: none; font-weight: 700; font-size: 17px;
+    }
+    .cta-section a:hover { background: #ff5219; }
+
+    footer { padding: 40px 0; text-align: center; color: #555; font-size: 13px; border-top: 1px solid #1a1a1a; }
+    footer a { color: #888; text-decoration: none; margin: 0 12px; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a href="/" style="text-decoration:none;"><div class="logo">Asistente<span>.</span></div></a>
+      <div class="links">
+        <a href="/#como">Cómo funciona</a>
+        <a href="/pricing">Precios</a>
+        <a href="/start">Empezar</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <section class="hero">
+      <h1>Hecho por una agencia<br><span class="accent">para agencias</span></h1>
+      <p class="lede">No es un producto inventado por un developer suelto. Es lo que usamos todos los días en Revolv Agency para no perder el control de los proyectos de nuestros clientes.</p>
+    </section>
+
+    <section>
+      <h2>La historia</h2>
+      <p>Soy <strong>Nacho Pirotta</strong>, CEO de <strong>Revolv Agency</strong>. Empezamos editando videos para clientes de Instagram y crecimos a una agencia de 8 editores con 30+ clientes activos.</p>
+
+      <p>El problema vino cuando éramos 3 personas y manejábamos 10 clientes: <strong>perdíamos plata porque el equipo no se enteraba a tiempo cuando un cliente subía material nuevo</strong>. El cliente subía un crudo a Drive un viernes a la noche, los editores se enteraban el lunes, y para cuando reaccionaban ya teníamos un cliente enojado.</p>
+
+      <p>Las opciones que probamos antes:</p>
+      <ul>
+        <li><strong>WhatsApp:</strong> el editor se distrae con las conversaciones, pierde mensajes</li>
+        <li><strong>Trello / Notion:</strong> alguien tenía que cargar todo manual</li>
+        <li><strong>Avisar por mail cuando llegaba material:</strong> alguien tenía que mirar Drive y reportar</li>
+      </ul>
+
+      <p>Todos requerían <strong>una persona haciendo el trabajo de "supervisor de Drive"</strong>. Y esa persona terminaba siendo yo. Pasaba 1-2 horas por día sólo chequeando carpetas.</p>
+    </section>
+
+    <section>
+      <h2>Lo que armé</h2>
+      <p>En 2025 armé un sistema que <strong>watchea automáticamente las carpetas de mis clientes en Drive</strong>, identifica a qué editor le toca, y le manda mail + push notification al toque. Y cuando el editor entrega el editado, se cierra solo.</p>
+
+      <p>En los primeros 3 meses, este sistema:</p>
+
+      <div class="card">
+        <div class="stat">
+          <div>
+            <span class="num">~10h</span>
+            <span class="label">por semana ahorrados de no chequear Drive manual</span>
+          </div>
+          <div>
+            <span class="num">0</span>
+            <span class="label">clientes perdidos por demora de notificación</span>
+          </div>
+          <div>
+            <span class="num">8</span>
+            <span class="label">editores usando el dashboard cada día</span>
+          </div>
+        </div>
+      </div>
+
+      <p>Otros amigos con agencias me empezaron a preguntar "¿cómo lo hiciste?". Algunos lo implementaron solos copiando ideas. Eso me dio la pista de que valía la pena <strong>convertirlo en producto</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Para quién es Asistente</h2>
+      <p>Si tu agencia tiene <strong>estas 3 cosas</strong>, esto es para vos:</p>
+      <ul>
+        <li>Los clientes te suben material a Google Drive (no usás Dropbox, Frame.io, ftp)</li>
+        <li>Tenés al menos 1 persona del equipo aparte de vos</li>
+        <li>Te falta de tiempo para chequear el Drive cada hora</li>
+      </ul>
+
+      <div class="quote">
+        <p>"Si tu equipo es de 1 persona, no lo necesitás. Si son 2, va a ayudar. Si son 4+, vas a ahorrar horas por semana."</p>
+        <span class="author">— Nacho, fundador</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Para quién NO es</h2>
+      <p>Soy honesto — esto no es para todos:</p>
+      <ul>
+        <li>Si usás <strong>Dropbox, OneDrive, Frame.io</strong> u otra cosa que no sea Drive → no es para vos hoy</li>
+        <li>Si trabajás <strong>solo</strong> y no tenés equipo → no aporta mucho</li>
+        <li>Si tu workflow es 100% por WhatsApp/Telegram sin archivos → no aplica</li>
+        <li>Si tu negocio no es agencia (ecommerce, contadores, etc.) → mirá otras soluciones, esto está pensado específico</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Compromiso</h2>
+      <p>Como uso el sistema en mi propia agencia todos los días, <strong>tengo skin in the game</strong>. Si algo se rompe, lo arreglo rápido — porque también me afecta a mí.</p>
+      <p>Mis horarios son los de Argentina (UTC-3). Respondo mails con menos de 24h. Si me escribís a <a href="mailto:nacho.rodriguezpirotta@gmail.com" style="color:#ff6b35;">nacho.rodriguezpirotta@gmail.com</a>, te respondo yo personalmente.</p>
+    </section>
+
+    <section class="cta-section">
+      <h2 style="margin-bottom:16px;">¿Te tira?</h2>
+      <p style="margin-bottom:32px;">Probalo gratis 30 días. Setup en 5 minutos. Si no te sirve, cancelás cuando quieras.</p>
+      <a href="/start">Empezar gratis →</a>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="/pricing">Precios</a> ·
+      <a href="/about">Sobre</a> ·
+      <a href="/privacy">Privacidad</a> ·
+      <a href="/terms">Términos</a> ·
+      <a href="/mi-pedido">Consultar mi pedido</a>
+      <br><br>
+      © Asistente · Hecho en Argentina por Nacho Pirotta
+    </div>
+  </footer>
+
+</body>
+</html>

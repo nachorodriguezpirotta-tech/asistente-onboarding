@@ -75,7 +75,7 @@ def _mock_kv_update(key, updates):
 
 
 def _mock_kv_request(command_list):
-    """Soporta KEYS <pattern>, SET, GET, EX para el código que llama _kv_request directo."""
+    """Soporta KEYS <pattern>, SET, GET, INCR, EXPIRE para el código que llama _kv_request."""
     cmd = (command_list[0] or "").upper()
     if cmd == "KEYS":
         pattern = command_list[1] if len(command_list) > 1 else "*"
@@ -90,6 +90,15 @@ def _mock_kv_request(command_list):
         key, value = command_list[1], command_list[2]
         _kv_memory[key] = {"value": value, "ts": time.time()}
         return {"result": "OK"}
+    if cmd == "INCR":
+        key = command_list[1]
+        rec = _kv_memory.get(key)
+        current = int(rec["value"]) if rec else 0
+        new = current + 1
+        _kv_memory[key] = {"value": str(new), "ts": time.time()}
+        return {"result": new}
+    if cmd == "EXPIRE":
+        return {"result": 1}  # noop en mock
     return {"result": None}
 
 
@@ -226,8 +235,11 @@ API_ROUTES = {
     "/api/admin_get": "admin_get",
     "/api/admin_list": "admin_list",
     "/api/admin_trigger": "admin_trigger",
+    "/api/admin_stats": "admin_stats",
     "/api/status": "status",
     "/api/lookup": "lookup",
+    "/api/waitlist": "waitlist",
+    "/api/track": "track",
 }
 
 
@@ -281,6 +293,7 @@ class DevHandler(http.server.SimpleHTTPRequestHandler):
             "/terms": "/terms.html",
             "/mi-pedido": "/mi-pedido.html",
             "/pricing": "/pricing.html",
+            "/about": "/about.html",
         }
         if self.path in mapping:
             self.path = mapping[self.path]

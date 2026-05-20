@@ -148,6 +148,11 @@
     <h1>Pedidos</h1>
     <div class="subtitle">Admin · Asistente Onboarding</div>
 
+    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <button class="secondary" id="tab-pedidos" style="background:#ff6b35;">Pedidos</button>
+      <button class="secondary" id="tab-stats">Stats & Waitlist</button>
+    </div>
+
     <div class="stats" id="stats"></div>
 
     <div class="toolbar">
@@ -163,6 +168,20 @@
       </select>
       <button class="secondary" id="refresh">↻ Refresh</button>
       <button class="secondary" id="logout">Logout</button>
+    </div>
+
+    <!-- Stats view -->
+    <div id="stats-view" style="display:none;">
+      <h3 style="color:#fff; font-size:18px; margin: 24px 0 12px;">Funnel últimos 30 días</h3>
+      <table>
+        <thead><tr><th>Fecha</th><th>Pageviews</th><th>Wizard starts</th><th>OAuth completed</th><th>Waitlist signups</th></tr></thead>
+        <tbody id="stats-tbody"><tr><td colspan="5" class="empty">Cargando…</td></tr></tbody>
+      </table>
+      <h3 style="color:#fff; font-size:18px; margin: 24px 0 12px;">Waitlist (gente que dejó su mail)</h3>
+      <table>
+        <thead><tr><th>Email</th><th>Source</th><th>Fecha</th></tr></thead>
+        <tbody id="waitlist-tbody"><tr><td colspan="3" class="empty">Cargando…</td></tr></tbody>
+      </table>
     </div>
 
     <table id="tbl">
@@ -322,6 +341,37 @@
     document.getElementById('refresh').onclick = load;
     document.getElementById('search').oninput = render;
     document.getElementById('filter-status').onchange = render;
+
+    // Tab switching
+    document.getElementById('tab-pedidos').onclick = () => {
+      document.getElementById('tab-pedidos').style.background = '#ff6b35';
+      document.getElementById('tab-stats').style.background = '#262626';
+      document.getElementById('stats-view').style.display = 'none';
+      document.getElementById('tbl').style.display = '';
+      document.querySelector('.toolbar').style.display = '';
+      document.getElementById('stats').style.display = '';
+    };
+    document.getElementById('tab-stats').onclick = async () => {
+      document.getElementById('tab-pedidos').style.background = '#262626';
+      document.getElementById('tab-stats').style.background = '#ff6b35';
+      document.getElementById('stats-view').style.display = 'block';
+      document.getElementById('tbl').style.display = 'none';
+      document.querySelector('.toolbar').style.display = 'none';
+      document.getElementById('stats').style.display = 'none';
+      try {
+        const r = await fetch(`/api/admin_stats?t=${encodeURIComponent(TOKEN)}`);
+        const j = await r.json();
+        // Renderizar stats
+        document.getElementById('stats-tbody').innerHTML = j.days.map(d => `
+          <tr><td>${d.date}</td><td>${d.pageview}</td><td>${d.wizard_start}</td><td>${d.oauth_completed}</td><td>${d.waitlist_signup}</td></tr>
+        `).join('') || '<tr><td colspan="5" class="empty">Sin datos todavía</td></tr>';
+        document.getElementById('waitlist-tbody').innerHTML = (j.waitlist || []).map(w => `
+          <tr><td>${escapeHtml(w.email)}</td><td>${escapeHtml(w.source)}</td><td>${new Date(w.created_at).toLocaleString('es-AR')}</td></tr>
+        `).join('') || '<tr><td colspan="3" class="empty">Nadie todavía</td></tr>';
+      } catch (e) {
+        toast(`Error cargando stats: ${e.message}`);
+      }
+    };
 
     if (TOKEN) authenticate(TOKEN);
   </script>

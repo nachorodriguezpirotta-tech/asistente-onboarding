@@ -77,6 +77,15 @@ class handler(BaseHTTPRequestHandler):
         except Exception:
             google_email = ""
 
+        # Track oauth completion
+        try:
+            import datetime as _dt
+            from _shared import _kv_request as _kvr
+            today = _dt.datetime.utcnow().strftime("%Y-%m-%d")
+            _kvr(["INCR", f"track:{today}:oauth_completed"])
+        except Exception:
+            pass
+
         # Guardar tokens en el pedido
         kv_update(f"pedido:{state}", {
             "status": "oauth_done",
