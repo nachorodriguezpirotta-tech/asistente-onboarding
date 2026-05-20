@@ -61,6 +61,11 @@ API_ROUTES = {
     "/api/lookup": "lookup",
     "/api/waitlist": "waitlist",
     "/api/track": "track",
+    "/api/editors": "editors",
+    "/api/tasks": "tasks",
+}
+API_PREFIX_ROUTES = {
+    "/api/tenant/": "tenant",
 }
 
 
@@ -73,33 +78,46 @@ class ProdHandler(http.server.SimpleHTTPRequestHandler):
 
     def _route_api(self, method):
         parsed = urllib.parse.urlparse(self.path)
-        for path, handler_name in API_ROUTES.items():
+        handler_name = None
+        for path, name in API_ROUTES.items():
             if parsed.path == path or parsed.path == path + "/":
-                HandlerCls = get_handler(handler_name)
-                inst = HandlerCls.__new__(HandlerCls)
-                inst.rfile = self.rfile
-                inst.wfile = self.wfile
-                inst.headers = self.headers
-                inst.command = self.command
-                inst.path = self.path
-                inst.client_address = self.client_address
-                inst.request = self.request
-                inst.server = self.server
-                inst.send_response = self.send_response
-                inst.send_header = self.send_header
-                inst.end_headers = self.end_headers
-                inst.send_error = self.send_error
-                method_name = f"do_{method}"
-                if hasattr(inst, method_name):
-                    return getattr(inst, method_name)()
-                else:
-                    self.send_error(405)
-                    return True
+                handler_name = name
+                break
+        if not handler_name:
+            for prefix, name in API_PREFIX_ROUTES.items():
+                if parsed.path.startswith(prefix):
+                    handler_name = name
+                    break
+        if handler_name:
+            HandlerCls = get_handler(handler_name)
+            inst = HandlerCls.__new__(HandlerCls)
+            inst.rfile = self.rfile
+            inst.wfile = self.wfile
+            inst.headers = self.headers
+            inst.command = self.command
+            inst.path = self.path
+            inst.client_address = self.client_address
+            inst.request = self.request
+            inst.server = self.server
+            inst.send_response = self.send_response
+            inst.send_header = self.send_header
+            inst.end_headers = self.end_headers
+            inst.send_error = self.send_error
+            method_name = f"do_{method}"
+            if hasattr(inst, method_name):
+                return getattr(inst, method_name)()
+            else:
+                self.send_error(405)
+                return True
         return False
 
     def do_GET(self):
         if self._route_api("GET"):
             return
+        # Ruta dinámica /dashboard/<tenant_id> → dashboard.html
+        if self.path.startswith("/dashboard/"):
+            self.path = "/dashboard.html"
+            return super().do_GET()
         mapping = {
             "/": "/index.html",
             "/start": "/start.html",

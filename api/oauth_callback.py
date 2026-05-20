@@ -1,61 +1,54 @@
 """
 GET /api/oauth_callback?code=<code>&state=<pedido_id>
 
-Recibe el callback de Google. Intercambia el code por tokens, guarda en KV,
-notifica al admin por mail, y redirige al cliente a /success.html.
+Recibe el callback de Google. Intercambia el code por tokens, CREA EL TENANT,
+y redirige directo al dashboard del cliente con su token.
+
+Es el corazón del modelo Instant SaaS: el cliente termina OAuth y AL TOQUE
+tiene su dashboard funcionando, sin esperar deploys ni nada.
 """
 
+import datetime
+import hashlib
+import hmac
+import os
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-import os
-import json
-import urllib.request
-
 from _shared import (
-    kv_get, kv_update, base_url, redirect, json_response,
+    kv_get, kv_set, kv_update, base_url, redirect, json_response,
     google_exchange_code, google_userinfo, notify_admin,
 )
 
 
-def trigger_github_workflow(pedido_id: str) -> bool:
-    """Dispara el workflow `provision_client.yml` para que GitHub Actions
-    deploye este pedido automáticamente. Devuelve True si se disparó OK."""
-    gh_pat = os.environ.get("GITHUB_PAT", "")
-    gh_owner = os.environ.get("GITHUB_OWNER", "")
-    gh_repo = os.environ.get("GITHUB_REPO", "asistente-onboarding")
-    if not gh_pat or not gh_owner:
-        print(f"⚠️  GITHUB_PAT o GITHUB_OWNER no seteados — workflow no se dispara")
-        return False
-    url = f"https://api.github.com/repos/{gh_owner}/{gh_repo}/actions/workflows/provision_client.yml/dispatches"
-    body = json.dumps({
-        "ref": "main",
-        "inputs": {"pedido_id": pedido_id},
-    }).encode()
-    req = urllib.request.Request(url, data=body, method="POST")
-    req.add_header("Authorization", f"Bearer {gh_pat}")
-    req.add_header("Accept", "application/vnd.github+json")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("X-GitHub-Api-Version", "2022-11-28")
-    try:
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return r.status == 204
-    except Exception as e:
-        print(f"❌ workflow_dispatch falló: {e}")
-        return False
+SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
+
+
+def make_tenant_token(tenant_id: str) -> str:
+    return hmac.new(SECRET.encode(), tenant_id.encode(), hashlib.sha256).hexdigest()[:24]
+
+
+# Presets pre-armados (vocabulario por defecto según tipo de negocio)
+PRESETS = {
+    "video_edit":       {"input_singular": "crudo",       "input_plural": "crudos",          "output_singular": "editado",          "output_plural": "editados",          "assignee_singular": "editor",      "assignee_plural": "editores",     "project_singular": "cliente",   "project_plural": "clientes"},
+    "photo_studio":     {"input_singular": "shoot",       "input_plural": "shoots",          "output_singular": "foto retocada",    "output_plural": "fotos retocadas",   "assignee_singular": "retocador",   "assignee_plural": "retocadores",  "project_singular": "sesión",    "project_plural": "sesiones"},
+    "design_agency":    {"input_singular": "brief",       "input_plural": "briefs",          "output_singular": "diseño",           "output_plural": "diseños",           "assignee_singular": "diseñador",   "assignee_plural": "diseñadores",  "project_singular": "proyecto",  "project_plural": "proyectos"},
+    "ugc":              {"input_singular": "material",    "input_plural": "materiales",      "output_singular": "edit",             "output_plural": "edits",             "assignee_singular": "editor",      "assignee_plural": "editores",     "project_singular": "creator",   "project_plural": "creators"},
+    "music_production": {"input_singular": "demo",        "input_plural": "demos",           "output_singular": "mezcla",           "output_plural": "mezclas",           "assignee_singular": "productor",   "assignee_plural": "productores",  "project_singular": "track",     "project_plural": "tracks"},
+    "events":           {"input_singular": "brief",       "input_plural": "briefs",          "output_singular": "evento producido", "output_plural": "eventos producidos","assignee_singular": "productor",   "assignee_plural": "productores",  "project_singular": "evento",    "project_plural": "eventos"},
+    "coaching":         {"input_singular": "sesión",      "input_plural": "sesiones",        "output_singular": "grabación",        "output_plural": "grabaciones",       "assignee_singular": "coach",       "assignee_plural": "coaches",      "project_singular": "alumno",    "project_plural": "alumnos"},
+}
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         qs = parse_qs(urlparse(self.path).query)
         code = (qs.get("code", [""])[0]).strip()
-        state = (qs.get("state", [""])[0]).strip()
+        state = (qs.get("state", [""])[0]).strip()  # pedido_id (temporal)
         error = qs.get("error", [None])[0]
 
         if error:
-            # Usuario canceló el OAuth
             return redirect(self, f"/start.html?error=denied")
-
         if not code or not state:
             return json_response(self, {"error": "Faltan code/state"}, 400)
 
@@ -70,66 +63,80 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             return json_response(self, {"error": f"OAuth falló: {e}"}, 500)
 
-        # Verificar identidad
         try:
             userinfo = google_userinfo(tokens["access_token"])
             google_email = userinfo.get("email", "")
         except Exception:
             google_email = ""
 
-        # Track oauth completion
-        try:
-            import datetime as _dt
-            from _shared import _kv_request as _kvr
-            today = _dt.datetime.utcnow().strftime("%Y-%m-%d")
-            _kvr(["INCR", f"track:{today}:oauth_completed"])
-        except Exception:
-            pass
+        # ── CREAR TENANT ────────────────────────────────────────────────
+        # El pedido_id se convierte en tenant_id (mismo string)
+        tenant_id = state
+        preset = pedido.get("preset", "video_edit")
+        vocab = PRESETS.get(preset, PRESETS["video_edit"])
+        if preset == "custom":
+            # Vocabulario que vino del form
+            vocab = {
+                "input_singular": pedido.get("custom_input", "archivo"),
+                "input_plural": pedido.get("custom_input", "archivo") + "s",
+                "output_singular": pedido.get("custom_output", "entrega"),
+                "output_plural": pedido.get("custom_output", "entrega") + "s",
+                "assignee_singular": pedido.get("custom_assignee", "responsable"),
+                "assignee_plural": pedido.get("custom_assignee", "responsable") + "es",
+                "project_singular": "proyecto",
+                "project_plural": "proyectos",
+            }
 
-        # Guardar tokens en el pedido
-        kv_update(f"pedido:{state}", {
-            "status": "oauth_done",
+        tenant = {
+            "id": tenant_id,
+            "brand_name": pedido.get("brand_name", ""),
+            "admin_email": pedido.get("admin_email", ""),
             "google_email": google_email,
+            "preset": preset,
+            "drive_url": pedido.get("drive_url", ""),
+            "drive_folder_id": pedido.get("drive_folder_id", ""),
+            "drive_mode": pedido.get("drive_mode", "my_drive"),
             "oauth_refresh_token": tokens.get("refresh_token", ""),
             "oauth_access_token": tokens.get("access_token", ""),
-            "oauth_expires_in": tokens.get("expires_in", 0),
             "oauth_scope": tokens.get("scope", ""),
-            "oauth_received_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-        })
+            "primary_color": "#ff6b35",
+            "accent_color": "#ff6b35",
+            "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+            **vocab,
+        }
+        kv_set(f"tenant:{tenant_id}", tenant)
 
-        # ── NOTIFICAR SIEMPRE AL ADMIN (vos) ─────────────────────────────
-        # Sin importar si el workflow se dispara o no, te avisamos por mail
-        # que llegó un pedido nuevo. Así estás al tanto en tiempo real.
-        subject = f"🆕 Pedido nuevo: {pedido.get('brand_name')}"
-        text = f"""Llegó un cliente nuevo al onboarding.
+        # Seed: 3 editores genéricos para que el cliente arranque con algo
+        seed_editors = [
+            {"id": "ed1", "name": "Editor 1", "email": "", "active": True},
+            {"id": "ed2", "name": "Editor 2", "email": "", "active": True},
+            {"id": "ed3", "name": "Editor 3", "email": "", "active": True},
+        ]
+        kv_set(f"tenant:{tenant_id}:editors", seed_editors)
+        kv_set(f"tenant:{tenant_id}:tasks", [])
+        kv_set(f"tenant:{tenant_id}:clients", [])
 
-ID: {state}
+        # ── NOTIFICAR AL ADMIN ──────────────────────────────────────────
+        try:
+            subject = f"🆕 Tenant nuevo: {pedido.get('brand_name')}"
+            text = f"""Llegó un cliente nuevo y ya tiene su dashboard activo.
+
+ID: {tenant_id}
 Cliente: {pedido.get('brand_name')}
-Tipo: {pedido.get('preset')}
+Tipo: {preset}
 Email: {pedido.get('admin_email')}
 Google conectada: {google_email}
-Drive folder: {pedido.get('drive_url') or '(toda la unidad)'}
 
-El sistema va a intentar deployarlo automáticamente.
-Podés ver el estado en: /admin
+Su dashboard: {base_url(self)}/dashboard/{tenant_id}?t={make_tenant_token(tenant_id)}
 """
-        try:
             notify_admin(subject=subject, body_text=text)
         except Exception as e:
             print(f"⚠️  notify_admin falló: {e}")
 
-        # ── AUTO-DEPLOY ─────────────────────────────────────────────────
-        # Disparar el workflow de GitHub Actions que va a deployar este cliente
-        # automáticamente.
-        workflow_ok = trigger_github_workflow(state)
+        # ── BORRAR el pedido temporal (ya cumplió su función) ────────────
+        # No es estrictamente necesario, pero limpia.
+        # kv_set(f"pedido:{state}", None)  # opcional
 
-        if workflow_ok:
-            kv_update(f"pedido:{state}", {"status": "provisioning"})
-            print(f"✅ Workflow disparado para pedido {state}")
-        else:
-            # Workflow no se pudo disparar — marcar para retry
-            kv_update(f"pedido:{state}", {"status": "oauth_done"})
-            print(f"⚠️  Workflow no se pudo disparar — quedó en oauth_done para retry manual")
-
-        # Redirigir a pantalla de éxito (el polling muestra el estado real)
-        return redirect(self, f"/success.html?id={state}")
+        # ── REDIRIGIR DIRECTO AL DASHBOARD ──────────────────────────────
+        token = make_tenant_token(tenant_id)
+        return redirect(self, f"/dashboard/{tenant_id}?t={token}&welcome=1")

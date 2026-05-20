@@ -9,7 +9,9 @@
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/mi-pedido", "destination": "/mi-pedido.html" },
     { "source": "/pricing", "destination": "/pricing.html" },
-    { "source": "/about", "destination": "/about.html" }
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/dashboard/:tenant_id", "destination": "/dashboard.html" },
+    { "source": "/api/tenant/:id", "destination": "/api/tenant" }
   ],
   "functions": {
     "api/*.py": { "memory": 256, "maxDuration": 10 }

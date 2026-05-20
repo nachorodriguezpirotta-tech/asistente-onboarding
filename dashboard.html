@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cargando…</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0a; color: #e5e5e5; line-height: 1.5; padding-bottom: 60px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    nav { background: rgba(10, 10, 10, 0.9); border-bottom: 1px solid #1a1a1a; padding: 14px 0; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
+    nav .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    nav .brand { font-weight: 800; font-size: 18px; color: #fff; letter-spacing: -0.01em; }
+    nav .brand .accent { color: #ff6b35; }
+    nav .meta { color: #888; font-size: 12px; }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05));
+      border: 1px solid rgba(255, 107, 53, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .welcome-banner .icon { font-size: 32px; }
+    .welcome-banner h2 { color: #fff; font-size: 20px; margin-bottom: 4px; }
+    .welcome-banner p { color: #c0c0c0; font-size: 14px; }
+    .welcome-banner .close { margin-left: auto; background: transparent; border: 1px solid #2a2a2a; color: #888; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+    .tabs { display: flex; gap: 4px; margin: 24px 0 16px; border-bottom: 1px solid #1a1a1a; }
+    .tab {
+      background: transparent; color: #888; border: none;
+      padding: 12px 20px; cursor: pointer;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .tab.active { color: #ff6b35; border-bottom-color: #ff6b35; }
+    .tab:hover:not(.active) { color: #fff; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    h1 { color: #fff; font-size: 28px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px; }
+    h2 { color: #fff; font-size: 20px; font-weight: 700; margin: 24px 0 12px; }
+    h3 { color: #fff; font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .stat .label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .stat .value { color: #fff; font-size: 26px; font-weight: 800; }
+    .stat.accent .value { color: #ff6b35; }
+    .stat.success .value { color: #4caf50; }
+
+    .editors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .editor-card {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .editor-card .head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .editor-card .name-input {
+      background: transparent; border: none; color: #fff;
+      font-size: 18px; font-weight: 700;
+      font-family: inherit;
+      padding: 4px 6px; border-radius: 6px;
+      width: 100%;
+    }
+    .editor-card .name-input:hover, .editor-card .name-input:focus {
+      background: #0a0a0a; outline: 1px solid #ff6b35;
+    }
+    .editor-card .email-input {
+      background: transparent; border: none; color: #888;
+      font-size: 13px; font-family: inherit; width: 100%;
+      padding: 4px 6px; border-radius: 6px;
+    }
+    .editor-card .email-input:hover, .editor-card .email-input:focus {
+      background: #0a0a0a; outline: 1px solid #2a2a2a; color: #fff;
+    }
+    .editor-card .del {
+      background: transparent; border: 1px solid #2a2a2a;
+      color: #ff8080; width: 28px; height: 28px; border-radius: 6px;
+      cursor: pointer; font-size: 14px; padding: 0;
+    }
+    .editor-card .del:hover { background: #2a1a1a; border-color: #441a1a; }
+
+    .editor-card .tasks-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #1a1a1a; }
+    .editor-card .tasks-section .small { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
+    .task-row { display: flex; gap: 6px; align-items: center; padding: 6px 0; }
+    .task-row .text { flex: 1; color: #d0d0d0; font-size: 13px; }
+    .task-row.done .text { text-decoration: line-through; color: #555; }
+    .task-row .check { background: transparent; border: 1px solid #2a2a2a; color: #888; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-size: 12px; padding: 0; }
+    .task-row .check:hover { background: #1a3a1a; color: #4caf50; border-color: #2a5a2a; }
+    .task-row.done .check { background: #1a3a1a; color: #4caf50; border-color: #2a5a2a; }
+    .task-row .del { background: transparent; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 0 4px; }
+    .task-row .del:hover { color: #ff8080; }
+
+    .add-form { display: flex; gap: 6px; margin-top: 8px; }
+    .add-form input { flex: 1; background: #0a0a0a; border: 1px solid #2a2a2a; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    .add-form button { background: #ff6b35; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; font-family: inherit; }
+    .add-form button:hover { background: #ff5219; }
+
+    .btn-add-editor {
+      background: transparent; border: 1px dashed #444;
+      color: #888; padding: 16px; border-radius: 12px;
+      cursor: pointer; width: 100%; font-size: 14px; font-family: inherit;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-add-editor:hover { border-color: #ff6b35; color: #ff6b35; }
+
+    /* Settings */
+    .settings-card {
+      background: #141414;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .settings-card label { color: #d0d0d0; font-size: 13px; display: block; margin-bottom: 6px; margin-top: 12px; }
+    .settings-card label:first-of-type { margin-top: 0; }
+    .settings-card input {
+      width: 100%; background: #0a0a0a; border: 1px solid #2a2a2a; color: #fff;
+      padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
+    }
+    .settings-card input:focus { outline: none; border-color: #ff6b35; }
+    .settings-card .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .settings-card .hint { color: #666; font-size: 12px; margin-top: 4px; }
+    .save-btn { background: #ff6b35; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 16px; font-family: inherit; }
+    .save-btn:hover { background: #ff5219; }
+    .save-btn:disabled { opacity: 0.6; }
+
+    .empty { text-align: center; padding: 40px; color: #666; font-size: 14px; }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a3a1a; color: #b0e0b0;
+      border: 1px solid #2a5a2a; border-radius: 8px;
+      padding: 10px 20px; font-size: 13px;
+      animation: slideUp .25s;
+      z-index: 200;
+    }
+    .toast.error { background: #2a1a1a; color: #ff8080; border-color: #441a1a; }
+    @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="brand"><span id="nav-brand">Cargando…</span><span class="accent">.</span></div>
+      <div class="meta" id="nav-meta">—</div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div class="welcome-banner" id="welcome" style="display:none;">
+      <div class="icon">🎉</div>
+      <div>
+        <h2 id="welcome-title">¡Bienvenido!</h2>
+        <p>Cargamos 3 editores genéricos para arrancar. Cambiales el nombre, agregá el equipo real, y empezá a cargar tareas. Todo es editable acá mismo.</p>
+      </div>
+      <button class="close" id="welcome-close">Entendido</button>
+    </div>
+
+    <h1 id="title">Cargando…</h1>
+    <p class="subtitle" id="subtitle">—</p>
+
+    <div class="tabs">
+      <button class="tab active" data-view="overview">Resumen</button>
+      <button class="tab" data-view="editors">Equipo</button>
+      <button class="tab" data-view="tasks">Tareas pendientes</button>
+      <button class="tab" data-view="settings">Configuración</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="view active" id="view-overview">
+      <div class="stats" id="overview-stats"></div>
+      <h2 id="overview-h2">Pendientes por <span id="vocab-assignee-plural">editor</span></h2>
+      <div class="editors-grid" id="overview-editors"></div>
+    </div>
+
+    <!-- EDITORS -->
+    <div class="view" id="view-editors">
+      <h2><span id="vocab-assignee-plural-h">Editores</span> del equipo</h2>
+      <p class="subtitle">Editá nombres, mails y agregá los miembros reales de tu equipo. <strong>Click el nombre para editarlo.</strong></p>
+      <div class="editors-grid" id="editors-list"></div>
+      <button class="btn-add-editor" id="add-editor-btn">+ Agregar <span id="vocab-assignee">editor</span></button>
+    </div>
+
+    <!-- TASKS -->
+    <div class="view" id="view-tasks">
+      <h2>Todas las tareas pendientes</h2>
+      <p class="subtitle">Agregá tareas manualmente, asignalas, marcalas como hechas.</p>
+
+      <div class="settings-card">
+        <h3>Nueva tarea</h3>
+        <div class="grid-2">
+          <div>
+            <label>Cliente / Proyecto</label>
+            <input id="new-task-client" placeholder="Nombre del cliente">
+          </div>
+          <div>
+            <label>Responsable</label>
+            <select id="new-task-assignee" style="width:100%; background:#0a0a0a; border:1px solid #2a2a2a; color:#fff; padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
+          </div>
+        </div>
+        <label>Descripción (opcional)</label>
+        <input id="new-task-title" placeholder="Ej: editar Reel de boda">
+        <button class="save-btn" id="add-task-btn">Crear tarea</button>
+      </div>
+
+      <h3>Lista</h3>
+      <div id="tasks-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <h2>Configuración del sistema</h2>
+      <p class="subtitle">Personalizá el vocabulario y la marca.</p>
+
+      <div class="settings-card">
+        <h3 style="margin-top:0;">Marca</h3>
+        <label>Nombre del negocio</label>
+        <input id="set-brand-name">
+        <label>Email admin</label>
+        <input id="set-admin-email">
+      </div>
+
+      <div class="settings-card">
+        <h3 style="margin-top:0;">Vocabulario</h3>
+        <p class="hint" style="margin-bottom:12px;">Cómo se llaman las cosas en tu negocio.</p>
+        <div class="grid-2">
+          <div>
+            <label>Lo que entra (singular)</label>
+            <input id="set-input-sing" placeholder="crudo / shoot / brief">
+            <div class="hint">Lo que el cliente sube</div>
+          </div>
+          <div>
+            <label>Lo que entra (plural)</label>
+            <input id="set-input-plural">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label>Lo que sale (singular)</label>
+            <input id="set-output-sing" placeholder="editado / foto / arte">
+            <div class="hint">Lo que entrega el equipo</div>
+          </div>
+          <div>
+            <label>Lo que sale (plural)</label>
+            <input id="set-output-plural">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label>Responsable (singular)</label>
+            <input id="set-assignee-sing">
+          </div>
+          <div>
+            <label>Responsable (plural)</label>
+            <input id="set-assignee-plural">
+          </div>
+        </div>
+      </div>
+
+      <button class="save-btn" id="save-settings-btn">Guardar cambios</button>
+    </div>
+
+  </div>
+
+  <script>
+    const path = window.location.pathname.split('/');
+    const TENANT_ID = path[path.length - 1] || path[path.length - 2];
+    const params = new URLSearchParams(window.location.search);
+    const TOKEN = params.get('t') || '';
+    const IS_WELCOME = params.get('welcome') === '1';
+
+    let STATE = { profile: {}, editors: [], tasks: [], clients: [] };
+
+    function toast(msg, isError = false) {
+      const t = document.createElement('div');
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2200);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    async function api(method, url, body) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+      return j;
+    }
+
+    function tenantUrl(suffix = '') {
+      return `/api/tenant/${TENANT_ID}${suffix}?t=${encodeURIComponent(TOKEN)}`;
+    }
+
+    function editorsUrl(extra = '') {
+      return `/api/editors?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+    }
+
+    function tasksUrl(extra = '') {
+      return `/api/tasks?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+    }
+
+    async function loadAll() {
+      try {
+        const data = await api('GET', tenantUrl());
+        STATE = data;
+        render();
+      } catch (e) {
+        document.body.innerHTML = `<div style="padding:60px; text-align:center; color:#888;">
+          <h1 style="color:#fff;">Acceso denegado</h1>
+          <p>${escapeHtml(e.message)}</p>
+          <p style="margin-top:20px;"><a href="/" style="color:#ff6b35;">Volver al inicio</a></p>
+        </div>`;
+      }
+    }
+
+    function render() {
+      const p = STATE.profile;
+      document.title = `${p.brand_name} · Asistente`;
+      document.getElementById('nav-brand').textContent = p.brand_name;
+      document.getElementById('nav-meta').textContent = p.admin_email;
+      document.getElementById('title').textContent = p.brand_name;
+      document.getElementById('subtitle').textContent = `Sistema de seguimiento — ${p.input_plural || 'archivos'} → ${p.output_plural || 'entregas'}`;
+      document.getElementById('welcome-title').textContent = `¡Bienvenido, ${p.brand_name}!`;
+      document.getElementById('vocab-assignee-plural').textContent = p.assignee_plural || 'responsables';
+      document.getElementById('vocab-assignee-plural-h').textContent = (p.assignee_plural || 'responsables').charAt(0).toUpperCase() + (p.assignee_plural || 'responsables').slice(1);
+      document.getElementById('vocab-assignee').textContent = p.assignee_singular || 'responsable';
+
+      renderOverview();
+      renderEditors();
+      renderTasks();
+      renderSettings();
+    }
+
+    function renderOverview() {
+      const pending = STATE.tasks.filter(t => t.status !== 'done').length;
+      const done = STATE.tasks.filter(t => t.status === 'done').length;
+      const editorsCount = STATE.editors.filter(e => e.active !== false).length;
+      document.getElementById('overview-stats').innerHTML = `
+        <div class="stat accent"><div class="label">Pendientes</div><div class="value">${pending}</div></div>
+        <div class="stat success"><div class="label">Completadas</div><div class="value">${done}</div></div>
+        <div class="stat"><div class="label">${STATE.profile.assignee_plural || 'Responsables'}</div><div class="value">${editorsCount}</div></div>
+      `;
+
+      // Pendientes por editor
+      const byEditor = {};
+      for (const e of STATE.editors) byEditor[e.name] = [];
+      for (const t of STATE.tasks) {
+        if (t.status === 'done') continue;
+        const ed = t.assignee || '(sin asignar)';
+        if (!byEditor[ed]) byEditor[ed] = [];
+        byEditor[ed].push(t);
+      }
+
+      document.getElementById('overview-editors').innerHTML = Object.entries(byEditor).map(([ed, tasks]) => `
+        <div class="editor-card">
+          <div class="head"><strong style="color:#fff;font-size:16px;">${escapeHtml(ed)}</strong><span style="color:#888;font-size:12px;">${tasks.length} pendientes</span></div>
+          ${tasks.length === 0 ? '<div style="color:#666;font-size:13px;">Sin pendientes 🎉</div>' :
+            tasks.slice(0, 5).map(t => `<div class="task-row"><span class="text">${escapeHtml(t.client || t.title || '—')}</span></div>`).join('')
+          }
+        </div>
+      `).join('') || '<div class="empty">Sin equipo cargado</div>';
+    }
+
+    function renderEditors() {
+      const html = STATE.editors.map(e => {
+        const taskCount = STATE.tasks.filter(t => t.assignee === e.name && t.status !== 'done').length;
+        const tasks = STATE.tasks.filter(t => t.assignee === e.name).slice(0, 8);
+        return `
+        <div class="editor-card" data-id="${e.id}">
+          <div class="head">
+            <input class="name-input" value="${escapeHtml(e.name)}" data-field="name" data-id="${e.id}">
+            <button class="del" data-id="${e.id}" title="Borrar">✕</button>
+          </div>
+          <input class="email-input" placeholder="email@ejemplo.com" value="${escapeHtml(e.email || '')}" data-field="email" data-id="${e.id}">
+          <div class="tasks-section">
+            <span class="small">${taskCount} pendientes · ${tasks.length} en total</span>
+            ${tasks.map(t => `
+              <div class="task-row ${t.status === 'done' ? 'done' : ''}">
+                <button class="check" data-tid="${t.id}" data-status="${t.status}">${t.status === 'done' ? '✓' : ''}</button>
+                <span class="text">${escapeHtml(t.client || t.title || '—')}</span>
+                <button class="del" data-tid="${t.id}" data-action="del-task">🗑️</button>
+              </div>
+            `).join('')}
+            <div class="add-form">
+              <input class="quick-task" data-editor="${escapeHtml(e.name)}" placeholder="Nuevo cliente pendiente">
+              <button data-editor="${escapeHtml(e.name)}" data-action="add-quick-task">+</button>
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('');
+      document.getElementById('editors-list').innerHTML = html || '<div class="empty">Sin editores. Agregá al menos uno abajo.</div>';
+
+      // Bind events
+      document.querySelectorAll('.editor-card .name-input, .editor-card .email-input').forEach(inp => {
+        inp.onblur = async () => {
+          const id = inp.dataset.id;
+          const field = inp.dataset.field;
+          try {
+            await api('PATCH', editorsUrl(), { id, [field]: inp.value });
+            await loadAll();
+            toast('Guardado');
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+      document.querySelectorAll('.editor-card > .head .del').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('¿Borrar este editor?')) return;
+          try {
+            await api('DELETE', editorsUrl(`&id=${btn.dataset.id}`));
+            await loadAll();
+            toast('Editor borrado');
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+      document.querySelectorAll('.editor-card .check').forEach(btn => {
+        btn.onclick = async () => {
+          const tid = btn.dataset.tid;
+          const newStatus = btn.dataset.status === 'done' ? 'pending' : 'done';
+          try {
+            await api('PATCH', tasksUrl(), { id: tid, status: newStatus });
+            await loadAll();
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+      document.querySelectorAll('.editor-card [data-action="del-task"]').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('¿Borrar esta tarea?')) return;
+          try {
+            await api('DELETE', tasksUrl(`&id=${btn.dataset.tid}`));
+            await loadAll();
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+      document.querySelectorAll('.editor-card [data-action="add-quick-task"]').forEach(btn => {
+        btn.onclick = async () => {
+          const editor = btn.dataset.editor;
+          const input = document.querySelector(`.quick-task[data-editor="${editor.replace(/"/g, '\\"')}"]`);
+          const client = input.value.trim();
+          if (!client) return;
+          try {
+            await api('POST', tasksUrl(), { client, assignee: editor });
+            input.value = '';
+            await loadAll();
+            toast('Tarea agregada');
+          } catch (e) { toast(e.message, true); }
+        };
+      });
+    }
+
+    function renderTasks() {
+      const sel = document.getElementById('new-task-assignee');
+      sel.innerHTML = '<option value="">(sin asignar)</option>' +
+        STATE.editors.map(e => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+
+      const html = STATE.tasks.length === 0 ? '<div class="empty">No hay tareas. Creá una arriba.</div>' :
+        STATE.tasks.map(t => `
+          <div class="task-row ${t.status === 'done' ? 'done' : ''}" style="padding:10px 12px; background:#141414; border:1px solid #262626; border-radius:8px; margin-bottom:6px;">
+            <button class="check" data-tid="${t.id}" data-status="${t.status}">${t.status === 'done' ? '✓' : ''}</button>
+            <span class="text"><strong>${escapeHtml(t.client || '(sin cliente)')}</strong>${t.title && t.title !== t.client ? ' — ' + escapeHtml(t.title) : ''}<span style="color:#666; font-size:12px; margin-left:8px;">${escapeHtml(t.assignee || '(sin asignar)')}</span></span>
+            <button class="del" data-tid="${t.id}" data-action="del-task">🗑️</button>
+          </div>
+        `).join('');
+      document.getElementById('tasks-list').innerHTML = html;
+
+      document.querySelectorAll('#tasks-list .check').forEach(btn => {
+        btn.onclick = async () => {
+          const tid = btn.dataset.tid;
+          const newStatus = btn.dataset.status === 'done' ? 'pending' : 'done';
+          try { await api('PATCH', tasksUrl(), { id: tid, status: newStatus }); await loadAll(); }
+          catch (e) { toast(e.message, true); }
+        };
+      });
+      document.querySelectorAll('#tasks-list [data-action="del-task"]').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('¿Borrar?')) return;
+          try { await api('DELETE', tasksUrl(`&id=${btn.dataset.tid}`)); await loadAll(); }
+          catch (e) { toast(e.message, true); }
+        };
+      });
+    }
+
+    function renderSettings() {
+      const p = STATE.profile;
+      document.getElementById('set-brand-name').value = p.brand_name || '';
+      document.getElementById('set-admin-email').value = p.admin_email || '';
+      document.getElementById('set-input-sing').value = p.input_singular || '';
+      document.getElementById('set-input-plural').value = p.input_plural || '';
+      document.getElementById('set-output-sing').value = p.output_singular || '';
+      document.getElementById('set-output-plural').value = p.output_plural || '';
+      document.getElementById('set-assignee-sing').value = p.assignee_singular || '';
+      document.getElementById('set-assignee-plural').value = p.assignee_plural || '';
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      t.onclick = () => {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        document.getElementById('view-' + t.dataset.view).classList.add('active');
+      };
+    });
+
+    // Add editor button
+    document.getElementById('add-editor-btn').onclick = async () => {
+      const name = prompt('Nombre del editor:');
+      if (!name) return;
+      const email = prompt('Email (opcional):') || '';
+      try {
+        await api('POST', editorsUrl(), { name, email });
+        await loadAll();
+        toast('Editor agregado');
+      } catch (e) { toast(e.message, true); }
+    };
+
+    // Add task button
+    document.getElementById('add-task-btn').onclick = async () => {
+      const client = document.getElementById('new-task-client').value.trim();
+      const assignee = document.getElementById('new-task-assignee').value;
+      const title = document.getElementById('new-task-title').value.trim();
+      if (!client) { toast('Falta cliente', true); return; }
+      try {
+        await api('POST', tasksUrl(), { client, assignee, title });
+        document.getElementById('new-task-client').value = '';
+        document.getElementById('new-task-title').value = '';
+        await loadAll();
+        toast('Tarea creada');
+      } catch (e) { toast(e.message, true); }
+    };
+
+    // Save settings
+    document.getElementById('save-settings-btn').onclick = async () => {
+      const btn = document.getElementById('save-settings-btn');
+      btn.disabled = true; btn.textContent = 'Guardando...';
+      try {
+        await api('PATCH', tenantUrl(), {
+          brand_name: document.getElementById('set-brand-name').value.trim(),
+          admin_email: document.getElementById('set-admin-email').value.trim(),
+          input_singular: document.getElementById('set-input-sing').value.trim(),
+          input_plural: document.getElementById('set-input-plural').value.trim(),
+          output_singular: document.getElementById('set-output-sing').value.trim(),
+          output_plural: document.getElementById('set-output-plural').value.trim(),
+          assignee_singular: document.getElementById('set-assignee-sing').value.trim(),
+          assignee_plural: document.getElementById('set-assignee-plural').value.trim(),
+        });
+        await loadAll();
+        toast('Guardado');
+      } catch (e) { toast(e.message, true); }
+      finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+    };
+
+    // Welcome banner
+    if (IS_WELCOME) {
+      document.getElementById('welcome').style.display = 'flex';
+    }
+    document.getElementById('welcome-close').onclick = () => {
+      document.getElementById('welcome').style.display = 'none';
+      // Limpiar query param
+      window.history.replaceState({}, '', window.location.pathname + '?t=' + encodeURIComponent(TOKEN));
+    };
+
+    // Init
+    if (!TENANT_ID || !TOKEN) {
+      document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#888;"><h1 style="color:#fff;">Link inválido</h1><p>Falta tenant ID o token.</p></div>';
+    } else {
+      loadAll();
+    }
+  </script>
+
+</body>
+</html>
