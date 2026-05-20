@@ -39,6 +39,13 @@ REAL_GOOGLE = os.environ.get("REAL_GOOGLE") == "1"
 # Asegurar que api/ esté en sys.path
 sys.path.insert(0, str(BASE / "api"))
 
+# Importar el _shared REAL ANTES de reemplazarlo en sys.modules
+# (sino el mock se llama a sí mismo recursivamente)
+import importlib.util as _ilu
+_real_shared_spec = _ilu.spec_from_file_location("_shared_real", BASE / "api" / "_shared.py")
+_real_shared = _ilu.module_from_spec(_real_shared_spec)
+_real_shared_spec.loader.exec_module(_real_shared)
+
 # Crear módulo _shared MOCK
 import types
 
@@ -123,17 +130,14 @@ def _mock_read_json_body(handler):
 
 def _mock_google_oauth_url(state, redirect_uri):
     if REAL_GOOGLE:
-        # Importar el real
-        from _shared import google_oauth_url as real
-        return real(state, redirect_uri)
+        return _real_shared.google_oauth_url(state, redirect_uri)
     # Mock: redirige directo al callback con un code fake
     return f"{redirect_uri}?code=fake_code_{state}&state={state}"
 
 
 def _mock_google_exchange_code(code, redirect_uri):
     if REAL_GOOGLE:
-        from _shared import google_exchange_code as real
-        return real(code, redirect_uri)
+        return _real_shared.google_exchange_code(code, redirect_uri)
     # Mock: devuelve tokens fake
     return {
         "access_token": f"fake_access_{code}",
@@ -145,8 +149,7 @@ def _mock_google_exchange_code(code, redirect_uri):
 
 def _mock_google_userinfo(access_token):
     if REAL_GOOGLE:
-        from _shared import google_userinfo as real
-        return real(access_token)
+        return _real_shared.google_userinfo(access_token)
     return {"email": "cliente-test@example.com", "name": "Cliente Test"}
 
 
@@ -154,8 +157,7 @@ def _mock_notify_admin(subject, body_text, body_html=None):
     # Si están seteadas las credenciales reales, mandar mail real
     if os.environ.get("NOTIFY_MAIL_REFRESH_TOKEN") and os.environ.get("ADMIN_NOTIFY_EMAIL"):
         try:
-            from _shared import notify_admin as real_notify
-            ok = real_notify(subject, body_text, body_html)
+            ok = _real_shared.notify_admin(subject, body_text, body_html)
             if ok:
                 print(f"\n📧 [REAL ADMIN MAIL ENVIADO]")
                 print(f"   To: {os.environ.get('ADMIN_NOTIFY_EMAIL')}")
