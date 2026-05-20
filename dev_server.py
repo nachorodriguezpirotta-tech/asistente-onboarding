@@ -222,6 +222,7 @@ API_ROUTES = {
     "/api/oauth_callback": "oauth_callback",
     "/api/admin_get": "admin_get",
     "/api/admin_list": "admin_list",
+    "/api/admin_trigger": "admin_trigger",
     "/api/status": "status",
     "/api/lookup": "lookup",
 }

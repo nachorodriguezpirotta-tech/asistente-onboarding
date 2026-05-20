@@ -374,11 +374,12 @@ def main():
         })
         print("  ✓ Marcado como deployed")
 
-    # ─── 8. Mail al cliente ──────────────────────────────────────────────────
-    step(8, TOTAL, "Notificando al cliente")
+    # ─── 8. Mail al cliente + notificación al admin ──────────────────────────
+    step(8, TOTAL, "Notificando al cliente y al admin")
     if dry_run:
         print(f"  [DRY-RUN] Mail welcome a {pedido['admin_email']} con URL {dashboard_url}")
     else:
+        # 8a. Mail al cliente con su URL
         try:
             send_client_welcome_mail(
                 to=pedido["admin_email"],
@@ -386,10 +387,25 @@ def main():
                 dashboard_url=dashboard_url,
                 preset=pedido.get("preset", ""),
             )
-            print(f"  ✓ Mail enviado a {pedido['admin_email']}")
+            print(f"  ✓ Mail welcome enviado a {pedido['admin_email']}")
         except Exception as e:
-            print(f"  ⚠️  Mail no enviado ({e}). Mandalo a mano a {pedido['admin_email']}")
-            print(f"     URL del dashboard: {dashboard_url}")
+            print(f"  ⚠️  Mail al cliente no enviado ({e})")
+
+        # 8b. Mail al admin (vos) con el resumen
+        admin_email = os.environ.get("ADMIN_NOTIFY_EMAIL")
+        if admin_email:
+            try:
+                send_admin_summary_mail(
+                    admin_email=admin_email,
+                    brand_name=pedido["brand_name"],
+                    client_email=pedido["admin_email"],
+                    dashboard_url=dashboard_url,
+                    preset=pedido.get("preset", ""),
+                    pedido_id=pedido_id,
+                )
+                print(f"  ✓ Resumen enviado a admin ({admin_email})")
+            except Exception as e:
+                print(f"  ⚠️  Mail admin no enviado ({e})")
 
     print("\n" + "=" * 60)
     if dry_run:
@@ -398,6 +414,66 @@ def main():
         print(f"✅ CLIENTE LISTO: {pedido['brand_name']}")
     print(f"   Dashboard: {dashboard_url}")
     print("=" * 60)
+
+
+def send_admin_summary_mail(admin_email: str, brand_name: str, client_email: str,
+                              dashboard_url: str, preset: str, pedido_id: str):
+    """Manda mail al admin (vos) con resumen del cliente recién provisionado."""
+    import base64, json
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    ADMIN_REFRESH = os.environ.get("NOTIFY_MAIL_REFRESH_TOKEN", "")
+    ADMIN_CID = os.environ.get("NOTIFY_MAIL_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID", "")
+    ADMIN_CSEC = os.environ.get("NOTIFY_MAIL_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET", "")
+    if not (ADMIN_REFRESH and ADMIN_CID and ADMIN_CSEC):
+        raise RuntimeError("Faltan NOTIFY_MAIL_* para mandar el resumen al admin")
+
+    data = urllib.parse.urlencode({
+        "client_id": ADMIN_CID, "client_secret": ADMIN_CSEC,
+        "refresh_token": ADMIN_REFRESH, "grant_type": "refresh_token",
+    }).encode()
+    req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data, method="POST")
+    with urllib.request.urlopen(req, timeout=10) as r:
+        access_token = json.loads(r.read())["access_token"]
+
+    subject = f"✅ Cliente provisionado: {brand_name}"
+    text = f"""Nuevo cliente deployed automáticamente.
+
+Cliente: {brand_name}
+Tipo: {preset}
+Email: {client_email}
+Dashboard: {dashboard_url}
+ID del pedido: {pedido_id}
+
+Ya recibió su mail con el link. Cuando entre va a ver el welcome wizard.
+"""
+    html = f"""<html><body style="font-family:-apple-system,Segoe UI,sans-serif;max-width:600px;color:#222;">
+<h2 style="color:#4caf50;">✅ Cliente nuevo deployed</h2>
+<p><strong>{brand_name}</strong> ({preset}) acaba de ser provisionado automáticamente.</p>
+<table style="border-collapse:collapse;margin:16px 0;">
+  <tr><td style="padding:4px 12px 4px 0;color:#666;">Email cliente:</td><td><a href="mailto:{client_email}">{client_email}</a></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666;">Dashboard:</td><td><a href="{dashboard_url}">{dashboard_url}</a></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;color:#666;">ID:</td><td><code>{pedido_id}</code></td></tr>
+</table>
+<p style="color:#666;font-size:13px;">El cliente ya recibió su mail con el link. Cuando entre, va a ver el welcome wizard donde carga su equipo.</p>
+</body></html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["To"] = admin_email
+    msg["Subject"] = subject
+    msg["From"] = "Asistente Onboarding"
+    msg.attach(MIMEText(text, "plain", "utf-8"))
+    msg.attach(MIMEText(html, "html", "utf-8"))
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+
+    req = urllib.request.Request(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        data=json.dumps({"raw": raw}).encode(), method="POST",
+    )
+    req.add_header("Authorization", f"Bearer {access_token}")
+    req.add_header("Content-Type", "application/json")
+    urllib.request.urlopen(req, timeout=10)
 
 
 def send_client_welcome_mail(to: str, brand_name: str, dashboard_url: str, preset: str = ""):

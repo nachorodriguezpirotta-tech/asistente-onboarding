@@ -257,11 +257,14 @@
       const rows = filtered.map(p => {
         const created = p.created_at ? new Date(p.created_at).toLocaleString('es-AR') : '—';
         const actions = [];
-        if (p.status === 'oauth_done') {
-          actions.push(`<button class="copy-cmd" onclick="copyProvision('${p.id}')">📋 Copiar comando provision</button>`);
+        if (p.status === 'oauth_done' || p.status === 'failed') {
+          actions.push(`<button class="copy-cmd" onclick="triggerProvision('${p.id}')">🚀 Provisionar ahora</button>`);
+        }
+        if (p.status === 'provisioning') {
+          actions.push(`<a href="https://github.com/nachorodriguezpirotta-tech/asistente-onboarding/actions" target="_blank">⚙️ Ver workflow</a>`);
         }
         if (p.dashboard_url) {
-          actions.push(`<a href="${p.dashboard_url}" target="_blank">🔗 Dashboard</a>`);
+          actions.push(`<a href="${p.dashboard_url}" target="_blank">🔗 Dashboard cliente</a>`);
         }
         actions.push(`<button onclick="copyId('${p.id}')">ID</button>`);
         return `
@@ -291,10 +294,21 @@
       setTimeout(() => t.remove(), 2500);
     }
 
-    window.copyProvision = (id) => {
-      const cmd = `python3 provision.py ${id}`;
-      navigator.clipboard.writeText(cmd);
-      toast(`Comando copiado: ${cmd}`);
+    window.triggerProvision = async (id) => {
+      if (!confirm(`¿Disparar provision para ${id}?`)) return;
+      try {
+        const r = await fetch(`/api/admin_trigger?t=${encodeURIComponent(TOKEN)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || j.message || 'Error');
+        toast(`✅ Workflow disparado — ver en GitHub Actions`);
+        setTimeout(load, 1000);
+      } catch (e) {
+        toast(`❌ ${e.message}`);
+      }
     };
     window.copyId = (id) => {
       navigator.clipboard.writeText(id);
