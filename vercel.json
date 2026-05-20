@@ -12,8 +12,5 @@
     { "source": "/about", "destination": "/about.html" },
     { "source": "/dashboard/:tenant_id", "destination": "/dashboard.html" },
     { "source": "/api/tenant/:id", "destination": "/api/tenant" }
-  ],
-  "functions": {
-    "api/*.py": { "memory": 256, "maxDuration": 10 }
-  }
+  ]
 }
