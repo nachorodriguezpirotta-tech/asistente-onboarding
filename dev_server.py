@@ -100,7 +100,8 @@ def _mock_new_pedido_id():
 
 def _mock_base_url(handler):
     host = handler.headers.get("Host", f"localhost:{PORT}")
-    return f"http://{host}"
+    is_local = host.startswith("localhost") or host.startswith("127.0.0.1")
+    return ("http://" if is_local else "https://") + host
 
 
 def _mock_json_response(handler, data, status=200):
