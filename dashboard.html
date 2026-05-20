@@ -6,23 +6,13 @@
     <title>Cargando…</title>
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #141414;
-            --bg-card-2: #1c1c1c;
-            --border: #262626;
-            --text: #e8e8e8;
-            --text-dim: #888;
-            --accent: #ff6b35;
-            --green: #4ade80;
-            --red: #f87171;
-            --yellow: #fbbf24;
-            --purple: #a78bfa;
+            --bg: #0a0a0a; --bg-card: #141414; --bg-card-2: #1c1c1c;
+            --border: #262626; --text: #e8e8e8; --text-dim: #888;
+            --accent: #ff6b35; --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
             background: var(--bg); color: var(--text); line-height: 1.5;
@@ -45,21 +35,23 @@
         .header-meta { color: var(--text-dim); font-size: 11px; text-align: right; }
         .header-meta strong { color: var(--text); font-size: 13px; display: block; }
 
-        .tabs {
-            display: flex; gap: 4px; border-bottom: 1px solid var(--border);
-            margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+        .action-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .action-btn-main {
+            background: var(--accent); color: white; border: none;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
         }
-        .tab {
-            background: transparent; border: none; color: var(--text-dim);
-            padding: 12px 16px; cursor: pointer;
-            font-size: 14px; font-weight: 600; font-family: inherit;
-            border-bottom: 2px solid transparent; white-space: nowrap;
+        .action-btn-main:hover { background: #ff5219; }
+        .action-link {
+            background: var(--bg-card); color: var(--text);
+            border: 1px solid var(--border);
+            padding: 10px 14px; border-radius: 8px;
+            text-decoration: none; font-size: 13px; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+            font-family: inherit;
         }
-        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-        .tab:hover:not(.active) { color: var(--text); }
-
-        .view { display: none; }
-        .view.active { display: block; }
+        .action-link:hover { background: var(--bg-card-2); }
+        .action-link.active { background: var(--accent); color: white; border-color: var(--accent); }
 
         /* Summary banner */
         .summary-banner {
@@ -88,47 +80,22 @@
         .editor-block h2 {
             font-size: 16px; font-weight: 700;
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 8px; gap: 8px;
+            margin-bottom: 10px; gap: 8px;
         }
-        .editor-block h2 > .name-section {
-            flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
-        }
-        .editor-block h2 .name-edit {
-            background: transparent; border: none; color: var(--text);
-            font-size: 16px; font-weight: 700; font-family: inherit;
-            padding: 4px 6px; border-radius: 6px; flex: 1; min-width: 0;
-        }
-        .editor-block h2 .name-edit:hover, .editor-block h2 .name-edit:focus {
-            background: var(--bg-card-2); outline: 1px solid var(--accent);
+        .editor-block h2 > span:first-child {
+            display: flex; align-items: center; gap: 8px; min-width: 0;
         }
         .editor-block h2 .count { color: var(--text-dim); font-weight: 400; font-size: 13px; }
         .editor-block h2 .vacation-badge { color: var(--yellow); font-size: 12px; font-weight: 600; }
-        .editor-block h2 .actions { display: flex; gap: 4px; }
-        .editor-block h2 .actions button {
-            background: transparent; border: 1px solid var(--border);
-            color: var(--text-dim); width: 28px; height: 28px;
+        .add-mini {
+            background: var(--bg-card-2); border: 1px solid var(--border);
+            color: var(--text); width: 28px; height: 28px;
             border-radius: 6px; cursor: pointer; padding: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px;
+            font-size: 16px; font-weight: 700;
         }
-        .editor-block h2 .actions button:hover { background: var(--bg-card-2); color: var(--text); }
-        .editor-block h2 .actions button.vacation.active { background: rgba(251, 191, 36, 0.15); color: var(--yellow); border-color: rgba(251, 191, 36, 0.3); }
-        .editor-block h2 .actions button.del:hover { color: var(--red); border-color: var(--red); }
+        .add-mini:hover { background: var(--accent); border-color: var(--accent); color: white; }
 
-        .editor-email {
-            background: transparent; border: none; color: var(--text-dim);
-            font-size: 12px; padding: 0 6px; font-family: inherit; width: 100%;
-            margin-bottom: 10px;
-        }
-        .editor-email:hover, .editor-email:focus {
-            background: var(--bg-card-2); outline: 1px solid var(--border);
-            color: var(--text); border-radius: 4px;
-        }
-
-        /* Cliente cards */
-        .clientes-list {
-            display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
-        }
+        .clientes-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .cliente-card {
             background: var(--bg-card-2); border: 1px solid var(--border);
             border-radius: 8px; padding: 7px 10px;
@@ -141,115 +108,90 @@
             border-color: var(--red);
             background: rgba(248, 113, 113, 0.08);
         }
-        .cliente-card.urgent .cliente-name::before { content: '🚨 '; }
         .cliente-card .cliente-name { color: var(--text); font-weight: 500; }
+        .cliente-card .urgent-mark { color: var(--red); }
         .cliente-card .cliente-note {
-            color: var(--yellow); font-size: 11px; margin-left: 6px;
-            max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: var(--yellow); font-size: 11px; margin-left: 4px;
+            max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .cliente-card .count-controls {
-            display: inline-flex; align-items: center; gap: 2px;
+            display: inline-flex; align-items: center; gap: 1px;
             background: rgba(255, 107, 53, 0.1); border-radius: 4px;
-            margin: 0 4px; padding: 2px;
+            margin: 0 4px; padding: 1px;
         }
         .cliente-card .count-btn {
             background: transparent; border: none; color: var(--accent);
-            width: 20px; height: 20px; border-radius: 3px;
-            cursor: pointer; font-size: 14px; font-weight: 700; padding: 0;
+            width: 18px; height: 18px; border-radius: 3px;
+            cursor: pointer; font-size: 13px; font-weight: 700; padding: 0;
             display: flex; align-items: center; justify-content: center;
         }
         .cliente-card .count-btn:hover { background: rgba(255, 107, 53, 0.2); }
         .cliente-card .cliente-count {
-            color: var(--accent); font-weight: 700; font-size: 13px;
-            min-width: 16px; text-align: center; cursor: pointer;
+            color: var(--accent); font-weight: 700; font-size: 12px;
+            min-width: 14px; text-align: center; cursor: pointer; padding: 0 2px;
         }
-        .cliente-card .action-btn {
+        .cliente-card .icon-btn {
             background: transparent; border: none; cursor: pointer;
-            opacity: 0.45; font-size: 13px; padding: 2px 4px;
+            opacity: 0.45; font-size: 12px; padding: 2px 4px;
             transition: opacity .15s;
         }
-        .cliente-card:hover .action-btn { opacity: 0.85; }
-        .cliente-card .action-btn:hover { opacity: 1; }
-        .cliente-card .urgent-btn.active { opacity: 1; color: var(--red); }
-        .cliente-card .note-btn.active { opacity: 1; color: var(--yellow); }
+        .cliente-card:hover .icon-btn { opacity: 0.85; }
+        .cliente-card .icon-btn:hover { opacity: 1; }
+        .cliente-card .icon-btn.active { opacity: 1; }
+        .cliente-card .urgent-btn.active { color: var(--red); }
+        .cliente-card .note-btn.active { color: var(--yellow); }
         .cliente-card .delete-btn:hover { color: var(--green); }
 
-        /* Add form */
-        .add-form { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
-        .add-form input {
-            flex: 1; background: var(--bg-card-2); border: 1px solid var(--border);
-            color: var(--text); padding: 8px 10px; border-radius: 8px;
-            font-size: 13px; font-family: inherit;
-        }
-        .add-form input:focus { outline: none; border-color: var(--accent); }
-        .add-form button {
-            background: var(--accent); color: white; border: none;
-            padding: 8px 14px; border-radius: 8px; cursor: pointer;
-            font-size: 16px; font-weight: 700; font-family: inherit;
-        }
-        .add-form button:hover { background: #ff5219; }
-
-        .btn-add-editor {
-            background: transparent; border: 1px dashed var(--border);
-            color: var(--text-dim); padding: 14px; border-radius: 14px;
-            cursor: pointer; width: 100%; font-size: 14px; font-family: inherit;
-            margin-top: 12px;
-        }
-        .btn-add-editor:hover { border-color: var(--accent); color: var(--accent); }
-
-        /* Welcome */
-        .welcome-banner {
-            background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 107, 53, 0.03));
+        /* Modes */
+        .editor-only-banner {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.03));
             border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 14px; padding: 18px 20px; margin-bottom: 16px;
-            display: flex; align-items: center; gap: 14px;
+            border-radius: 14px; padding: 14px 18px; margin-bottom: 14px;
+            font-size: 13px; color: var(--text);
         }
-        .welcome-banner .icon { font-size: 28px; }
-        .welcome-banner h2 { font-size: 16px; margin-bottom: 4px; }
-        .welcome-banner p { color: var(--text-dim); font-size: 13px; }
-        .welcome-banner .close {
-            margin-left: auto; background: transparent; border: 1px solid var(--border);
-            color: var(--text-dim); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
-        }
+        .editor-only-banner strong { color: var(--accent); }
 
-        /* Settings */
-        .settings-block {
+        /* Modal */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; padding: 20px;
+        }
+        .modal {
             background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 18px; margin-bottom: 14px;
+            border-radius: 14px; padding: 22px; max-width: 460px; width: 100%;
         }
-        .settings-block h3 { color: var(--text); font-size: 15px; font-weight: 700; margin-bottom: 14px; }
-        .settings-block label {
-            display: block; color: var(--text); font-size: 13px;
-            margin-bottom: 4px; margin-top: 12px;
-        }
-        .settings-block label:first-of-type { margin-top: 0; }
-        .settings-block .hint { color: var(--text-dim); font-size: 12px; margin-top: -2px; margin-bottom: 6px; }
-        .settings-block input {
+        .modal h3 { margin-bottom: 16px; font-size: 17px; }
+        .modal label { display: block; color: var(--text); font-size: 13px; margin: 12px 0 4px; }
+        .modal label:first-of-type { margin-top: 0; }
+        .modal input, .modal textarea, .modal select {
             width: 100%; background: var(--bg-card-2); border: 1px solid var(--border);
             color: var(--text); padding: 10px 12px; border-radius: 8px;
-            font-size: 14px; font-family: inherit;
+            font-family: inherit; font-size: 14px;
+            resize: vertical;
         }
-        .settings-block input:focus { outline: none; border-color: var(--accent); }
-        .settings-block .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .save-btn {
-            background: var(--accent); color: white; border: none;
-            padding: 12px 24px; border-radius: 8px; font-weight: 700;
-            cursor: pointer; font-family: inherit;
+        .modal textarea { min-height: 80px; }
+        .modal input:focus, .modal textarea:focus, .modal select:focus {
+            outline: none; border-color: var(--accent);
         }
-        .save-btn:hover { background: #ff5219; }
-        .save-btn:disabled { opacity: 0.6; }
+        .modal .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+        .modal-actions button {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text); padding: 10px 18px; border-radius: 8px;
+            cursor: pointer; font-family: inherit; font-size: 14px;
+        }
+        .modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: white; font-weight: 700; }
+        .modal-actions button:hover { background: var(--bg-card-2); }
+        .modal-actions button.primary:hover { background: #ff5219; }
 
-        .drive-info {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 16px; margin-bottom: 14px;
+        .modal .urgent-toggle {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            background: var(--bg-card-2); border-radius: 8px; margin-top: 10px; cursor: pointer;
         }
-        .drive-info .status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .drive-info .status .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .drive-info .status.ready .dot { background: var(--green); }
-        .drive-info .status strong { color: var(--text); font-size: 14px; }
-        .drive-info code { background: var(--bg-card-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+        .modal .urgent-toggle.active { background: rgba(248, 113, 113, 0.15); }
 
-        /* Stats page */
+        /* Stats */
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
             margin-bottom: 20px;
@@ -265,52 +207,70 @@
             display: grid; grid-template-columns: 1fr auto auto auto auto auto;
             gap: 12px; align-items: center;
             padding: 12px 16px; background: var(--bg-card);
-            border: 1px solid var(--border); border-radius: 10px;
-            margin-bottom: 6px;
+            border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px;
         }
         .editor-stats-row .name { font-weight: 600; }
         .editor-stats-row .metric { text-align: center; }
-        .editor-stats-row .metric .num { font-size: 18px; font-weight: 700; color: var(--text); display: block; }
+        .editor-stats-row .metric .num { font-size: 18px; font-weight: 700; display: block; }
         .editor-stats-row .metric .small { font-size: 10px; color: var(--text-dim); text-transform: uppercase; }
         .editor-stats-row .health { width: 10px; height: 10px; border-radius: 50%; }
         .editor-stats-row .health.ok { background: var(--green); }
         .editor-stats-row .health.warning { background: var(--yellow); }
         .editor-stats-row .health.critical { background: var(--red); }
         @media (max-width: 700px) {
-            .editor-stats-row { grid-template-columns: 1fr auto; gap: 8px; }
-            .editor-stats-row .metric { display: none; }
-            .editor-stats-row .metric.primary { display: block; }
+            .editor-stats-row { grid-template-columns: 1fr auto; }
+            .editor-stats-row .metric:not(.primary) { display: none; }
         }
 
-        /* Modals */
-        .modal-bg {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 200; padding: 20px;
-        }
-        .modal {
+        /* Calendar */
+        .calendar {
             background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 20px; max-width: 420px; width: 100%;
+            border-radius: 14px; padding: 16px;
         }
-        .modal h3 { margin-bottom: 12px; }
-        .modal textarea, .modal input {
-            width: 100%; background: var(--bg-card-2); border: 1px solid var(--border);
-            color: var(--text); padding: 10px; border-radius: 8px;
-            font-family: inherit; font-size: 14px; margin-bottom: 12px;
-            resize: vertical;
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .calendar-header h3 { font-size: 16px; }
+        .calendar-header button {
+            background: var(--bg-card-2); border: 1px solid var(--border);
+            color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 13px;
         }
-        .modal textarea { min-height: 120px; }
-        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-        .modal-actions button {
-            background: transparent; border: 1px solid var(--border);
-            color: var(--text); padding: 8px 16px; border-radius: 8px;
-            cursor: pointer; font-family: inherit;
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .cal-day-header { text-align: center; color: var(--text-dim); font-size: 11px; padding: 4px; }
+        .cal-day {
+            background: var(--bg-card-2); border: 1px solid var(--border);
+            border-radius: 6px; padding: 6px; min-height: 60px;
+            position: relative; font-size: 11px;
         }
-        .modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .cal-day.empty { background: transparent; border: none; }
+        .cal-day .day-num { color: var(--text-dim); font-size: 11px; font-weight: 600; }
+        .cal-day.today .day-num { color: var(--accent); }
+        .cal-day .count {
+            position: absolute; bottom: 4px; right: 4px;
+            background: var(--green); color: white;
+            padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 600;
+        }
 
-        .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+        /* Drive */
+        .drive-info {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px; margin-bottom: 14px;
+        }
+        .drive-info .status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .drive-info .status .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .drive-info .status.ready .dot { background: var(--green); }
+        .drive-info .status strong { color: var(--text); font-size: 14px; }
+        .drive-info code { background: var(--bg-card-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+
+        .settings-block {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px; margin-bottom: 14px;
+        }
+        .settings-block h3 { color: var(--text); font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+        .settings-block .hint { color: var(--text-dim); font-size: 12px; margin-bottom: 12px; }
+
+        .view { display: none; }
+        .view.active { display: block; }
+        .empty { text-align: center; padding: 30px 20px; color: var(--text-dim); }
         .loading { text-align: center; padding: 40px; color: var(--text-dim); }
-        .error { background: #2a1a1a; color: #ff8080; padding: 14px; border-radius: 10px; margin: 16px 0; }
 
         .toast {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -335,20 +295,19 @@
 
     <div class="page-content">
 
-        <div class="welcome-banner" id="welcome" style="display:none;">
-            <div class="icon">🎉</div>
-            <div>
-                <h2 id="welcome-title">¡Bienvenido!</h2>
-                <p>Renombrá los editores, vinculá carpetas de Drive, y arranca todo automático.</p>
-            </div>
-            <button class="close" id="welcome-close">Entendido</button>
+        <!-- Banner para modo editor -->
+        <div class="editor-only-banner" id="editor-only-banner" style="display:none;">
+            👋 Hola <strong id="editor-only-name">—</strong>, estás viendo tus pendientes asignados.
         </div>
 
-        <div class="tabs">
-            <button class="tab active" data-view="overview">Pendientes</button>
-            <button class="tab" data-view="stats">Estadísticas</button>
-            <button class="tab" data-view="drive">Drive</button>
-            <button class="tab" data-view="settings">Config</button>
+        <!-- Action bar (admin view) -->
+        <div class="action-bar" id="action-bar">
+            <button class="action-btn-main" onclick="openAddTaskDialog()">+ Agregar pendiente</button>
+            <a class="action-link active" data-view="overview">📋 Pendientes</a>
+            <a class="action-link" data-view="stats">📊 Stats</a>
+            <a class="action-link" data-view="calendar">📅 Calendario</a>
+            <a class="action-link" data-view="drive">📁 Drive</a>
+            <a class="action-link" data-view="config">⚙️ Config</a>
         </div>
 
         <!-- VIEW: PENDIENTES -->
@@ -357,7 +316,6 @@
             <div class="editors-list" id="editors-list">
                 <div class="loading">Cargando…</div>
             </div>
-            <button class="btn-add-editor" id="add-editor-btn">+ Agregar <span id="vocab-assignee">editor</span></button>
         </div>
 
         <!-- VIEW: STATS -->
@@ -367,68 +325,81 @@
             <div id="stats-editors"></div>
         </div>
 
+        <!-- VIEW: CALENDAR -->
+        <div class="view" id="view-calendar">
+            <div class="calendar">
+                <div class="calendar-header">
+                    <button id="cal-prev">← Mes anterior</button>
+                    <h3 id="cal-month">—</h3>
+                    <button id="cal-next">Mes siguiente →</button>
+                </div>
+                <div class="calendar-grid" id="cal-grid"></div>
+                <div style="margin-top: 12px; color: var(--text-dim); font-size: 12px; text-align: center;">
+                    🟢 = entregas completadas ese día
+                </div>
+            </div>
+        </div>
+
         <!-- VIEW: DRIVE -->
         <div class="view" id="view-drive">
             <div class="drive-info">
                 <div class="status ready"><span class="dot"></span><strong>Cuenta Google conectada</strong></div>
                 <p><strong style="color: var(--text);">Email:</strong> <code id="drive-email">—</code></p>
             </div>
-
             <div class="settings-block">
                 <h3>Carpetas vinculadas a editores</h3>
-                <p class="hint" style="margin-bottom: 14px;">
-                    Asigná una carpeta de Drive a cada editor. Cuando aparezca un archivo nuevo ahí,
-                    se crea automáticamente una tarea para ese editor.
-                </p>
+                <p class="hint">Asigná una carpeta de Drive a cada editor. Cuando aparezca un archivo nuevo ahí, se crea automáticamente una tarea para ese editor.</p>
                 <div id="assignments-list"></div>
-                <button class="save-btn" id="add-assignment-btn" style="margin-top: 12px;">+ Vincular nueva carpeta</button>
+                <button class="action-btn-main" id="add-assignment-btn" style="margin-top: 12px;">+ Vincular nueva carpeta</button>
 
                 <div id="folder-picker" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
-                    <label>Elegí carpeta de tu Drive:</label>
-                    <div style="display: flex; gap: 4px; margin-bottom: 8px; font-size: 12px; color: var(--text-dim);">
+                    <label style="color: var(--text); font-size: 13px;">Elegí carpeta de tu Drive:</label>
+                    <div style="display: flex; gap: 4px; margin: 8px 0; font-size: 12px; color: var(--text-dim);">
                         <span id="folder-breadcrumb">Mi Unidad</span>
                     </div>
                     <div id="folder-list" style="max-height: 280px; overflow-y: auto; background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px;">
                         <div class="loading">Cargando carpetas…</div>
                     </div>
-                    <label style="margin-top: 14px;">Asignar al editor:</label>
-                    <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
+                    <label style="margin-top: 14px; color: var(--text); font-size: 13px;">Asignar al editor:</label>
+                    <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit; margin-top: 4px;"></select>
                     <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <button class="save-btn" id="confirm-assignment-btn">Vincular esta carpeta</button>
-                        <button class="save-btn" id="cancel-assignment-btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim);">Cancelar</button>
+                        <button class="action-btn-main" id="confirm-assignment-btn">Vincular esta carpeta</button>
+                        <button class="action-link" id="cancel-assignment-btn">Cancelar</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW: SETTINGS -->
-        <div class="view" id="view-settings">
+        <!-- VIEW: CONFIG -->
+        <div class="view" id="view-config">
             <div class="settings-block">
-                <h3>Marca</h3>
-                <label>Nombre del negocio</label>
-                <input id="set-brand-name">
-                <label>Email admin</label>
-                <input id="set-admin-email">
+                <h3>Marca del negocio</h3>
+                <label style="display: block; color: var(--text); font-size: 13px; margin: 0 0 4px;">Nombre</label>
+                <input id="set-brand-name" style="width: 100%; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;">
+                <label style="display: block; color: var(--text); font-size: 13px; margin: 12px 0 4px;">Email admin</label>
+                <input id="set-admin-email" style="width: 100%; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;">
+                <button class="action-btn-main" id="save-settings-btn" style="margin-top: 14px;">Guardar marca</button>
             </div>
 
             <div class="settings-block">
-                <h3>Vocabulario</h3>
-                <p class="hint" style="margin-bottom: 12px;">Cómo se llaman las cosas en tu negocio.</p>
-                <div class="grid-2">
-                    <div><label>Lo que entra (sing.)</label><input id="set-input-sing"></div>
-                    <div><label>Lo que entra (plural)</label><input id="set-input-plural"></div>
-                </div>
-                <div class="grid-2">
-                    <div><label>Lo que sale (sing.)</label><input id="set-output-sing"></div>
-                    <div><label>Lo que sale (plural)</label><input id="set-output-plural"></div>
-                </div>
-                <div class="grid-2">
-                    <div><label>Responsable (sing.)</label><input id="set-assignee-sing"></div>
-                    <div><label>Responsable (plural)</label><input id="set-assignee-plural"></div>
-                </div>
+                <h3>Editores del equipo</h3>
+                <p class="hint">Acá editás nombres, emails, y modo vacaciones de cada editor.</p>
+                <div id="config-editors-list"></div>
+                <button class="action-btn-main" id="add-editor-config-btn" style="margin-top: 12px;">+ Agregar editor</button>
             </div>
 
-            <button class="save-btn" id="save-settings-btn">Guardar cambios</button>
+            <div class="settings-block">
+                <h3>Apodos de clientes</h3>
+                <p class="hint">Si un cliente sube material a una carpeta llamada "Roger" pero su nombre real es "Roger Martí", agregá el apodo acá para que el sistema lo asigne correctamente.</p>
+                <div id="aliases-list"></div>
+                <button class="action-btn-main" id="add-alias-btn" style="margin-top: 12px;">+ Agregar apodo</button>
+            </div>
+
+            <div class="settings-block">
+                <h3>Links únicos por editor</h3>
+                <p class="hint">Cada editor tiene un link personal donde ve solo SUS pendientes. Compartilo con cada miembro del equipo.</p>
+                <div id="editor-links-list"></div>
+            </div>
         </div>
 
     </div>
@@ -438,15 +409,18 @@
         const TENANT_ID = path[path.length - 1];
         const params = new URLSearchParams(window.location.search);
         const TOKEN = params.get('t') || '';
+        const EDITOR_VIEW = params.get('editor') || '';   // si seteado, solo ve sus pendientes
         const IS_WELCOME = params.get('welcome') === '1';
+        const IS_EDITOR_MODE = !!EDITOR_VIEW;
 
-        let STATE = { profile: {}, editors: [], tasks: [], clients: [] };
-        let STATS = null;
+        let STATE = { profile: {}, editors: [], tasks: [] };
         let ASSIGNMENTS = [];
+        let ALIASES = [];
         let DRAGGING_TASK_ID = null;
         let CURRENT_PARENT = 'root';
         let SELECTED_FOLDER = null;
         let FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
+        let CAL_MONTH = new Date();
 
         function toast(msg, err = false) {
             const t = document.createElement('div');
@@ -473,11 +447,13 @@
         const statsUrl = () => `/api/tenant_stats?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const driveFoldersUrl = (parent = 'root') => `/api/drive_folders?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}&parent=${encodeURIComponent(parent)}`;
         const assignmentsUrl = (extra = '') => `/api/folder_assignments?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+        const aliasesUrl = (extra = '') => `/api/aliases?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
 
         async function loadAll() {
             try {
                 STATE = await api('GET', tenantUrl());
                 try { ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || []; } catch { ASSIGNMENTS = []; }
+                try { ALIASES = (await api('GET', aliasesUrl())).aliases || []; } catch { ALIASES = []; }
                 render();
             } catch (e) {
                 document.body.innerHTML = `<div style="padding:60px; text-align:center; color:#888;">
@@ -487,18 +463,42 @@
             }
         }
 
+        function visibleTasks() {
+            if (IS_EDITOR_MODE) {
+                return STATE.tasks.filter(t => (t.assignee || '').toLowerCase() === EDITOR_VIEW.toLowerCase());
+            }
+            return STATE.tasks;
+        }
+
+        function visibleEditors() {
+            if (IS_EDITOR_MODE) {
+                return STATE.editors.filter(e => e.name.toLowerCase() === EDITOR_VIEW.toLowerCase());
+            }
+            return STATE.editors;
+        }
+
         function render() {
             const p = STATE.profile;
-            document.title = `${p.brand_name || 'Asistente'} — Dashboard`;
+            document.title = `${p.brand_name || 'Asistente'} — ${IS_EDITOR_MODE ? EDITOR_VIEW : 'Dashboard'}`;
             document.getElementById('nav-brand').textContent = p.brand_name || 'Asistente';
-            document.getElementById('nav-admin').textContent = p.brand_name || '—';
+            document.getElementById('nav-admin').textContent = IS_EDITOR_MODE ? `Vista de ${EDITOR_VIEW}` : 'Admin';
             document.getElementById('nav-subtitle').textContent = `${p.input_plural || 'archivos'} → ${p.output_plural || 'entregas'}`;
-            document.getElementById('welcome-title').textContent = `¡Bienvenido, ${p.brand_name || ''}!`;
-            document.getElementById('vocab-assignee').textContent = p.assignee_singular || 'editor';
             document.getElementById('drive-email').textContent = p.google_email || '—';
 
+            // Editor mode: ocultar tabs admin
+            if (IS_EDITOR_MODE) {
+                document.getElementById('editor-only-banner').style.display = 'block';
+                document.getElementById('editor-only-name').textContent = EDITOR_VIEW;
+                document.querySelectorAll('.action-link, .action-btn-main').forEach(el => {
+                    const view = el.dataset.view;
+                    // Ocultar todo menos Pendientes y Stats
+                    if (view && view !== 'overview' && view !== 'stats') el.style.display = 'none';
+                    if (el.classList.contains('action-btn-main')) el.style.display = 'none';
+                });
+            }
+
             renderOverview();
-            renderSettings();
+            renderConfig();
             renderAssignments();
 
             const sel = document.getElementById('assign-editor');
@@ -506,19 +506,22 @@
         }
 
         function renderOverview() {
-            const totalPending = STATE.tasks.filter(t => t.status !== 'done').reduce((sum, t) => sum + (parseInt(t.pending_count) || 1), 0);
-            const totalDone = STATE.tasks.filter(t => t.status === 'done').length;
-            const totalUrgent = STATE.tasks.filter(t => t.status !== 'done' && t.urgent).length;
+            const tasks = visibleTasks();
+            const editors = visibleEditors();
+
+            const totalPending = tasks.filter(t => t.status !== 'done').reduce((s, t) => s + (parseInt(t.pending_count) || 1), 0);
+            const totalDone = tasks.filter(t => t.status === 'done').length;
+            const totalUrgent = tasks.filter(t => t.status !== 'done' && t.urgent).length;
 
             document.getElementById('summary').innerHTML = `
                 <div class="stat accent"><div class="label">${escapeHtml(STATE.profile.output_plural || 'Pendientes')}</div><strong>${totalPending}</strong></div>
                 <div class="stat urgent"><div class="label">Urgentes</div><strong>${totalUrgent}</strong></div>
                 <div class="stat green"><div class="label">Cerrados</div><strong>${totalDone}</strong></div>
-                <div class="stat"><div class="label">${escapeHtml(STATE.profile.assignee_plural || 'Editores')}</div><strong>${STATE.editors.length}</strong></div>
+                ${!IS_EDITOR_MODE ? `<div class="stat"><div class="label">${escapeHtml(STATE.profile.assignee_plural || 'Editores')}</div><strong>${STATE.editors.length}</strong></div>` : ''}
             `;
 
-            const html = STATE.editors.map(e => {
-                const editorTasks = STATE.tasks.filter(t => t.assignee === e.name && t.status !== 'done');
+            const html = editors.map(e => {
+                const editorTasks = tasks.filter(t => t.assignee === e.name && t.status !== 'done');
                 const totalCount = editorTasks.reduce((s, t) => s + (parseInt(t.pending_count) || 1), 0);
                 const onVac = !!e.on_vacation;
                 return `
@@ -527,96 +530,58 @@
                          ondragleave="this.classList.remove('drop-target')"
                          ondrop="onDropTask(event, '${attrEscape(e.name)}')">
                         <h2>
-                            <span class="name-section">
-                                <input class="name-edit" value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name">
-                                <span class="count">${editorTasks.length} pend · ${totalCount} ${STATE.profile.output_plural || 'items'}</span>
-                                ${onVac ? '<span class="vacation-badge">🌴</span>' : ''}
+                            <span>
+                                <span>${escapeHtml(e.name)}</span>
+                                <span class="count">${editorTasks.length} · ${totalCount} ${STATE.profile.output_plural || 'items'}</span>
+                                ${onVac ? '<span class="vacation-badge">🌴 vacaciones</span>' : ''}
                             </span>
-                            <span class="actions">
-                                <button class="vacation ${onVac ? 'active' : ''}" data-id="${e.id}" data-action="toggle-vacation" title="${onVac ? 'Sacar de vacaciones' : 'Marcar como vacaciones'}">🌴</button>
-                                <button class="del" data-id="${e.id}" data-action="del-editor" title="Borrar editor">✕</button>
-                            </span>
+                            ${!IS_EDITOR_MODE ? `<button class="add-mini" data-editor="${attrEscape(e.name)}" data-action="add-to-editor" title="Agregar cliente">+</button>` : ''}
                         </h2>
-                        <input class="editor-email" placeholder="email (opcional)" value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email">
                         <div class="clientes-list">
                             ${editorTasks.map(t => {
                                 const count = parseInt(t.pending_count) || 1;
                                 return `
-                                <div class="cliente-card ${t.urgent ? 'urgent' : ''}" data-tid="${t.id}" draggable="true"
+                                <div class="cliente-card ${t.urgent ? 'urgent' : ''}" data-tid="${t.id}" draggable="${!IS_EDITOR_MODE}"
                                      ondragstart="onDragStart(event, '${t.id}')" ondragend="onDragEnd(event)">
+                                    ${t.urgent ? '<span class="urgent-mark">🚨</span>' : ''}
                                     <span class="cliente-name">${escapeHtml(t.client || t.title || '—')}</span>
                                     <div class="count-controls">
-                                        <button class="count-btn" data-tid="${t.id}" data-action="count-minus" title="-1">−</button>
-                                        <span class="cliente-count" data-tid="${t.id}" data-action="edit-count" title="Editar manualmente">${count}</span>
-                                        <button class="count-btn" data-tid="${t.id}" data-action="count-plus" title="+1">+</button>
+                                        <button class="count-btn" data-tid="${t.id}" data-action="count-minus">−</button>
+                                        <span class="cliente-count" data-tid="${t.id}" data-action="edit-count">${count}</span>
+                                        <button class="count-btn" data-tid="${t.id}" data-action="count-plus">+</button>
                                     </div>
-                                    ${t.notes ? `<span class="cliente-note" title="${attrEscape(t.notes)}">📝 ${escapeHtml(t.notes.length > 30 ? t.notes.slice(0,30)+'…' : t.notes)}</span>` : ''}
-                                    <button class="action-btn urgent-btn ${t.urgent ? 'active' : ''}" data-tid="${t.id}" data-action="toggle-urgent" title="${t.urgent ? 'Quitar urgente' : 'Marcar urgente'}">🚨</button>
-                                    <button class="action-btn note-btn ${t.notes ? 'active' : ''}" data-tid="${t.id}" data-action="edit-note" title="${t.notes ? 'Editar nota' : 'Agregar nota'}">📝</button>
-                                    <button class="action-btn delete-btn" data-tid="${t.id}" data-action="mark-done" title="Marcar como hecho">✓</button>
+                                    ${t.notes ? `<span class="cliente-note" title="${attrEscape(t.notes)}">📝 ${escapeHtml(t.notes.length > 28 ? t.notes.slice(0,28)+'…' : t.notes)}</span>` : ''}
+                                    <button class="icon-btn urgent-btn ${t.urgent ? 'active' : ''}" data-tid="${t.id}" data-action="toggle-urgent" title="${t.urgent ? 'Quitar urgente' : 'Marcar urgente'}">🚨</button>
+                                    <button class="icon-btn note-btn ${t.notes ? 'active' : ''}" data-tid="${t.id}" data-action="edit-note" title="${t.notes ? 'Editar nota' : 'Agregar nota'}">📝</button>
+                                    <button class="icon-btn delete-btn" data-tid="${t.id}" data-action="mark-done" title="Marcar como hecho">✓</button>
                                 </div>
                                 `;
                             }).join('')}
                             ${editorTasks.length === 0 ? '<span style="color: var(--text-dim); font-size: 13px; padding: 4px 0;">Sin pendientes</span>' : ''}
                         </div>
-                        <div class="add-form">
-                            <input class="quick-task-input" placeholder="+ agregar cliente" data-editor="${attrEscape(e.name)}">
-                            <button data-editor="${attrEscape(e.name)}" data-action="add-quick">+</button>
-                        </div>
                     </div>
                 `;
             }).join('');
 
-            const list = document.getElementById('editors-list');
-            list.innerHTML = html || '<div class="empty">No hay editores. Agregá abajo.</div>';
-
+            document.getElementById('editors-list').innerHTML = html || '<div class="empty">Sin editores. Andá a Config para agregar.</div>';
             bindOverviewEvents();
         }
 
         function bindOverviewEvents() {
-            // Editor name/email edit
-            document.querySelectorAll('.editor-block .name-edit, .editor-block .editor-email').forEach(inp => {
-                inp.onblur = async () => {
-                    try {
-                        await api('PATCH', editorsUrl(), { id: inp.dataset.id, [inp.dataset.field]: inp.value.trim() });
-                        await loadAll();
-                    } catch (e) { toast(e.message, true); }
-                };
-                inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
-            });
-
-            // Action buttons (delegated)
-            document.querySelectorAll('.editor-block [data-action]').forEach(btn => {
+            document.querySelectorAll('#editors-list [data-action]').forEach(btn => {
                 btn.onclick = async () => {
                     const action = btn.dataset.action;
                     const tid = btn.dataset.tid;
-                    const eid = btn.dataset.id;
                     const editorName = btn.dataset.editor;
 
-                    if (action === 'toggle-vacation') {
-                        const e = STATE.editors.find(x => x.id === eid);
-                        if (!e) return;
-                        await api('PATCH', editorsUrl(), { id: eid, on_vacation: !e.on_vacation });
-                        await loadAll();
-                        toast(e.on_vacation ? 'Editor activo' : 'Editor en vacaciones');
-                    }
-                    else if (action === 'del-editor') {
-                        if (!confirm('¿Borrar este editor?')) return;
-                        await api('DELETE', editorsUrl(`&id=${eid}`));
-                        await loadAll();
-                    }
-                    else if (action === 'toggle-urgent') {
+                    if (action === 'toggle-urgent') {
                         const t = STATE.tasks.find(x => x.id === tid);
-                        if (!t) return;
                         await api('PATCH', tasksUrl(), { id: tid, urgent: !t.urgent });
                         await loadAll();
                     }
                     else if (action === 'edit-note') {
                         const t = STATE.tasks.find(x => x.id === tid);
-                        const note = prompt('Nota para este cliente:', t?.notes || '');
-                        if (note === null) return;
-                        await api('PATCH', tasksUrl(), { id: tid, notes: note });
-                        await loadAll();
+                        openNoteDialog(t);
                     }
                     else if (action === 'mark-done') {
                         await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
@@ -624,91 +589,227 @@
                     }
                     else if (action === 'count-minus' || action === 'count-plus') {
                         const t = STATE.tasks.find(x => x.id === tid);
-                        if (!t) return;
                         const current = parseInt(t.pending_count) || 1;
-                        const delta = action === 'count-plus' ? 1 : -1;
-                        const next = Math.max(0, current + delta);
-                        if (next === 0) {
-                            // Llegó a 0 → marcar done
-                            await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
-                        } else {
-                            await api('PATCH', tasksUrl(), { id: tid, pending_count: next });
-                        }
+                        const next = Math.max(0, current + (action === 'count-plus' ? 1 : -1));
+                        if (next === 0) await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
+                        else await api('PATCH', tasksUrl(), { id: tid, pending_count: next });
                         await loadAll();
                     }
                     else if (action === 'edit-count') {
                         const t = STATE.tasks.find(x => x.id === tid);
-                        const newCount = prompt('Cuántos pendientes:', t?.pending_count || 1);
-                        if (newCount === null) return;
-                        const n = parseInt(newCount);
+                        const v = prompt('Cuántos pendientes:', t?.pending_count || 1);
+                        if (v === null) return;
+                        const n = parseInt(v);
                         if (isNaN(n) || n < 0) return;
-                        if (n === 0) {
-                            await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
-                        } else {
-                            await api('PATCH', tasksUrl(), { id: tid, pending_count: n });
-                        }
+                        if (n === 0) await api('PATCH', tasksUrl(), { id: tid, status: 'done' });
+                        else await api('PATCH', tasksUrl(), { id: tid, pending_count: n });
                         await loadAll();
                     }
-                    else if (action === 'add-quick') {
-                        const input = btn.parentElement.querySelector('.quick-task-input');
-                        const client = input.value.trim();
-                        if (!client) return;
-                        await api('POST', tasksUrl(), { client, assignee: editorName });
-                        input.value = '';
-                        await loadAll();
-                    }
-                };
-            });
-
-            document.querySelectorAll('.quick-task-input').forEach(inp => {
-                inp.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        inp.parentElement.querySelector('button').click();
+                    else if (action === 'add-to-editor') {
+                        openAddTaskDialog(editorName);
                     }
                 };
             });
         }
 
-        // Drag & drop
-        window.onDragStart = (ev, tid) => {
-            DRAGGING_TASK_ID = tid;
-            ev.target.classList.add('dragging');
-            ev.dataTransfer.effectAllowed = 'move';
-        };
-        window.onDragEnd = (ev) => {
-            ev.target.classList.remove('dragging');
-            document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-            DRAGGING_TASK_ID = null;
-        };
+        // ── ADD TASK MODAL ──
+        function openAddTaskDialog(presetEditor) {
+            const editors = STATE.editors.map(e => e.name);
+            const editorOptions = editors.map(e => `<option value="${attrEscape(e)}">${escapeHtml(e)}</option>`).join('');
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-bg';
+            overlay.innerHTML = `
+              <div class="modal">
+                <h3>+ Agregar pendiente</h3>
+                ${presetEditor ? `<label>Editor</label><div style="padding: 10px 12px; background: var(--bg-card-2); border-radius: 8px; color: var(--text);">${escapeHtml(presetEditor)}</div>` : `
+                <label>Editor</label>
+                <select id="dlg-editor">
+                  <option value="">— elegí —</option>
+                  ${editorOptions}
+                </select>`}
+                <label>Cliente / Proyecto</label>
+                <input id="dlg-client" placeholder="Nombre del cliente o proyecto">
+                <div class="grid-2">
+                  <div>
+                    <label>Cantidad de ${escapeHtml(STATE.profile.output_plural || 'items')}</label>
+                    <input id="dlg-count" type="number" min="1" value="1">
+                  </div>
+                  <div>
+                    <label>Nota (opcional)</label>
+                    <input id="dlg-note" placeholder="Detalles, deadline, etc.">
+                  </div>
+                </div>
+                <div class="urgent-toggle" id="dlg-urgent">
+                  <span style="font-size: 18px;">🚨</span>
+                  <div>
+                    <strong style="color: var(--text);">Marcar como urgente</strong>
+                    <div style="color: var(--text-dim); font-size: 12px;">Aparece destacado en rojo</div>
+                  </div>
+                  <input type="checkbox" id="dlg-urgent-check" style="margin-left: auto; width: 18px; height: 18px;">
+                </div>
+                <div class="modal-actions">
+                  <button data-action="cancel">Cancelar</button>
+                  <button class="primary" data-action="save">Agregar</button>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const close = () => overlay.remove();
+            overlay.querySelector('[data-action="cancel"]').onclick = close;
+            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+
+            const urgentToggle = overlay.querySelector('#dlg-urgent');
+            const urgentCheck = overlay.querySelector('#dlg-urgent-check');
+            urgentToggle.onclick = (e) => {
+                if (e.target === urgentCheck) return;
+                urgentCheck.checked = !urgentCheck.checked;
+                urgentToggle.classList.toggle('active', urgentCheck.checked);
+            };
+            urgentCheck.onchange = () => urgentToggle.classList.toggle('active', urgentCheck.checked);
+
+            overlay.querySelector('[data-action="save"]').onclick = async () => {
+                const assignee = presetEditor || overlay.querySelector('#dlg-editor')?.value;
+                const client = overlay.querySelector('#dlg-client').value.trim();
+                const count = parseInt(overlay.querySelector('#dlg-count').value) || 1;
+                const notes = overlay.querySelector('#dlg-note').value.trim();
+                const urgent = overlay.querySelector('#dlg-urgent-check').checked;
+
+                if (!client) { toast('Falta cliente', true); return; }
+                try {
+                    await api('POST', tasksUrl(), { client, assignee, pending_count: count, notes, urgent });
+                    close();
+                    await loadAll();
+                    toast('Pendiente agregado');
+                } catch (e) { toast(e.message, true); }
+            };
+
+            overlay.querySelector('#dlg-client').focus();
+        }
+        window.openAddTaskDialog = openAddTaskDialog;
+
+        // ── NOTE DIALOG ──
+        function openNoteDialog(task) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-bg';
+            overlay.innerHTML = `
+              <div class="modal">
+                <h3>📝 Nota — ${escapeHtml(task.client || task.title)}</h3>
+                <textarea id="note-text" placeholder="Escribí detalles, deadline, instrucciones específicas…">${escapeHtml(task.notes || '')}</textarea>
+                <div class="modal-actions">
+                  <button data-action="cancel">Cancelar</button>
+                  <button class="primary" data-action="save">Guardar</button>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(overlay);
+            const close = () => overlay.remove();
+            overlay.querySelector('[data-action="cancel"]').onclick = close;
+            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            overlay.querySelector('[data-action="save"]').onclick = async () => {
+                try {
+                    await api('PATCH', tasksUrl(), { id: task.id, notes: overlay.querySelector('#note-text').value });
+                    close();
+                    await loadAll();
+                } catch (e) { toast(e.message, true); }
+            };
+            overlay.querySelector('#note-text').focus();
+        }
+
+        // ── Drag & drop ──
+        window.onDragStart = (ev, tid) => { DRAGGING_TASK_ID = tid; ev.target.classList.add('dragging'); ev.dataTransfer.effectAllowed = 'move'; };
+        window.onDragEnd = (ev) => { ev.target.classList.remove('dragging'); document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target')); DRAGGING_TASK_ID = null; };
         window.onDropTask = async (ev, newAssignee) => {
             ev.preventDefault();
             ev.currentTarget.classList.remove('drop-target');
             if (!DRAGGING_TASK_ID) return;
             const t = STATE.tasks.find(x => x.id === DRAGGING_TASK_ID);
             if (!t || t.assignee === newAssignee) return;
-            try {
-                await api('PATCH', tasksUrl(), { id: DRAGGING_TASK_ID, assignee: newAssignee });
-                await loadAll();
-                toast(`Reasignado a ${newAssignee}`);
-            } catch (e) { toast(e.message, true); }
+            try { await api('PATCH', tasksUrl(), { id: DRAGGING_TASK_ID, assignee: newAssignee }); await loadAll(); toast(`→ ${newAssignee}`); }
+            catch (e) { toast(e.message, true); }
         };
 
-        function renderSettings() {
+        // ── CONFIG view ──
+        function renderConfig() {
             const p = STATE.profile;
             document.getElementById('set-brand-name').value = p.brand_name || '';
             document.getElementById('set-admin-email').value = p.admin_email || '';
-            document.getElementById('set-input-sing').value = p.input_singular || '';
-            document.getElementById('set-input-plural').value = p.input_plural || '';
-            document.getElementById('set-output-sing').value = p.output_singular || '';
-            document.getElementById('set-output-plural').value = p.output_plural || '';
-            document.getElementById('set-assignee-sing').value = p.assignee_singular || '';
-            document.getElementById('set-assignee-plural').value = p.assignee_plural || '';
+
+            // Editores
+            const list = document.getElementById('config-editors-list');
+            list.innerHTML = STATE.editors.map(e => `
+                <div style="display: grid; grid-template-columns: 1fr 1.4fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                    <input value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
+                    <input value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email" placeholder="email (opcional)" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
+                    <button data-id="${e.id}" data-action="toggle-vacation" style="background: ${e.on_vacation ? 'rgba(251, 191, 36, 0.15)' : 'transparent'}; border: 1px solid var(--border); color: ${e.on_vacation ? 'var(--yellow)' : 'var(--text-dim)'}; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;">🌴</button>
+                    <button data-id="${e.id}" data-action="del-editor" style="background: transparent; border: 1px solid var(--border); color: var(--red); padding: 7px 10px; border-radius: 6px; cursor: pointer; font-family: inherit;">✕</button>
+                </div>
+            `).join('') || '<div class="empty">Sin editores</div>';
+
+            list.querySelectorAll('input').forEach(inp => {
+                inp.onblur = async () => {
+                    try { await api('PATCH', editorsUrl(), { id: inp.dataset.id, [inp.dataset.field]: inp.value.trim() }); await loadAll(); toast('Guardado'); }
+                    catch (e) { toast(e.message, true); }
+                };
+                inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
+            });
+            list.querySelectorAll('[data-action="toggle-vacation"]').forEach(btn => {
+                btn.onclick = async () => {
+                    const e = STATE.editors.find(x => x.id === btn.dataset.id);
+                    await api('PATCH', editorsUrl(), { id: btn.dataset.id, on_vacation: !e.on_vacation });
+                    await loadAll();
+                };
+            });
+            list.querySelectorAll('[data-action="del-editor"]').forEach(btn => {
+                btn.onclick = async () => {
+                    if (!confirm('¿Borrar este editor?')) return;
+                    await api('DELETE', editorsUrl(`&id=${btn.dataset.id}`));
+                    await loadAll();
+                };
+            });
+
+            // Aliases
+            const aliasList = document.getElementById('aliases-list');
+            aliasList.innerHTML = ALIASES.map(a => `
+                <div style="display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
+                    <span style="color: var(--text); font-weight: 600;">${escapeHtml(a.nickname)}</span>
+                    <span style="color: var(--text-dim);">→</span>
+                    <span style="color: var(--text);">${escapeHtml(a.real_name)}</span>
+                    <button data-id="${a.id}" data-action="del-alias" style="background: transparent; border: 1px solid var(--border); color: var(--red); padding: 5px 10px; border-radius: 6px; cursor: pointer;">✕</button>
+                </div>
+            `).join('') || '<div class="empty" style="padding: 16px;">Sin apodos definidos</div>';
+            aliasList.querySelectorAll('[data-action="del-alias"]').forEach(btn => {
+                btn.onclick = async () => {
+                    if (!confirm('¿Borrar este apodo?')) return;
+                    await api('DELETE', aliasesUrl(`&id=${btn.dataset.id}`));
+                    ALIASES = (await api('GET', aliasesUrl())).aliases || [];
+                    renderConfig();
+                };
+            });
+
+            // Links únicos
+            const baseUrl = window.location.origin + window.location.pathname;
+            const linksList = document.getElementById('editor-links-list');
+            linksList.innerHTML = STATE.editors.map(e => {
+                const link = `${baseUrl}?t=${TOKEN}&editor=${encodeURIComponent(e.name)}`;
+                return `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-card-2); border-radius: 6px; margin-bottom: 6px; font-size: 13px;">
+                        <strong style="min-width: 80px;">${escapeHtml(e.name)}</strong>
+                        <code style="flex: 1; background: transparent; color: var(--text-dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(link)}</code>
+                        <button data-link="${attrEscape(link)}" data-action="copy-link" style="background: var(--accent); border: none; color: white; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Copiar</button>
+                    </div>
+                `;
+            }).join('') || '<div class="empty">Sin editores</div>';
+            linksList.querySelectorAll('[data-action="copy-link"]').forEach(btn => {
+                btn.onclick = () => { navigator.clipboard.writeText(btn.dataset.link); toast('Link copiado'); };
+            });
         }
 
         function renderAssignments() {
             const list = document.getElementById('assignments-list');
             if (!ASSIGNMENTS.length) {
-                list.innerHTML = '<div class="empty" style="padding: 24px; background: var(--bg-card-2); border-radius: 8px; font-size: 13px;">Sin carpetas vinculadas todavía. Tocá "+ Vincular carpeta" abajo.</div>';
+                list.innerHTML = '<div class="empty" style="padding: 24px; background: var(--bg-card-2); border-radius: 8px; font-size: 13px;">Sin carpetas vinculadas todavía.</div>';
                 return;
             }
             list.innerHTML = ASSIGNMENTS.map(a => `
@@ -734,7 +835,7 @@
         async function loadDriveFolders(parent = 'root') {
             CURRENT_PARENT = parent;
             const list = document.getElementById('folder-list');
-            list.innerHTML = '<div class="loading">Cargando carpetas…</div>';
+            list.innerHTML = '<div class="loading">Cargando…</div>';
             try {
                 const r = await api('GET', driveFoldersUrl(parent));
                 const folders = r.folders || [];
@@ -751,34 +852,25 @@
                 list.querySelectorAll('.folder-row').forEach(row => {
                     row.onclick = (ev) => {
                         if (ev.target.closest('.enter-folder')) return;
-                        if (row.dataset.back) {
-                            FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
-                            loadDriveFolders('root');
-                            return;
-                        }
+                        if (row.dataset.back) { FOLDER_PATH = [{id:'root',name:'Mi Unidad'}]; loadDriveFolders('root'); return; }
                         list.querySelectorAll('.folder-row').forEach(r => r.style.background = '');
                         row.style.background = 'rgba(255, 107, 53, 0.15)';
                         SELECTED_FOLDER = { id: row.dataset.id, name: row.dataset.name };
                     };
                 });
                 list.querySelectorAll('.enter-folder').forEach(btn => {
-                    btn.onclick = (ev) => {
-                        ev.stopPropagation();
-                        const row = btn.closest('.folder-row');
-                        FOLDER_PATH.push({ id: btn.dataset.id, name: row.dataset.name });
-                        loadDriveFolders(btn.dataset.id);
-                    };
+                    btn.onclick = (ev) => { ev.stopPropagation(); FOLDER_PATH.push({id: btn.dataset.id, name: btn.closest('.folder-row').dataset.name}); loadDriveFolders(btn.dataset.id); };
                 });
                 document.getElementById('folder-breadcrumb').textContent = FOLDER_PATH.map(p => p.name).join(' / ');
             } catch (e) {
-                list.innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
+                list.innerHTML = `<div style="padding:14px; color: var(--red);">${escapeHtml(e.message)}</div>`;
             }
         }
 
         async function loadStats() {
             try {
-                STATS = await api('GET', statsUrl());
-                const t = STATS.totals;
+                const s = await api('GET', statsUrl());
+                const t = s.totals;
                 document.getElementById('stats-top').innerHTML = `
                     <div class="stats-card"><div class="label">Total pendientes</div><div class="value">${t.total_pending}</div></div>
                     <div class="stats-card"><div class="label">Urgentes</div><div class="value" style="color: var(--red);">${t.total_urgent}</div></div>
@@ -787,41 +879,87 @@
                     <div class="stats-card"><div class="label">Editores activos</div><div class="value">${t.active_editors}</div></div>
                     <div class="stats-card"><div class="label">De vacaciones</div><div class="value" style="color: var(--yellow);">${t.vacationing_editors}</div></div>
                 `;
-                document.getElementById('stats-editors').innerHTML = STATS.by_editor.map(e => `
+                document.getElementById('stats-editors').innerHTML = s.by_editor.map(e => `
                     <div class="editor-stats-row">
                         <div class="name">${escapeHtml(e.name)} ${e.on_vacation ? '🌴' : ''}</div>
                         <div class="metric primary"><span class="num">${e.pending_count}</span><span class="small">pend</span></div>
                         <div class="metric"><span class="num" style="color: var(--red);">${e.urgent_count}</span><span class="small">urg</span></div>
                         <div class="metric"><span class="num" style="color: var(--green);">${e.delivered_week}</span><span class="small">7d</span></div>
                         <div class="metric"><span class="num" style="color: var(--green);">${e.delivered_month}</span><span class="small">30d</span></div>
-                        <div class="metric"><div class="health ${e.health}" title="Health: ${e.health}"></div></div>
+                        <div class="metric"><div class="health ${e.health}" title="${e.health}"></div></div>
                     </div>
                 `).join('') || '<div class="empty">Sin editores</div>';
-            } catch (e) {
-                document.getElementById('stats-top').innerHTML = `<div class="error">${escapeHtml(e.message)}</div>`;
-            }
+            } catch (e) { toast(e.message, true); }
         }
 
-        // Tabs
-        document.querySelectorAll('.tab').forEach(t => {
+        // ── CALENDAR ──
+        function renderCalendar() {
+            const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            document.getElementById('cal-month').textContent = `${months[CAL_MONTH.getMonth()]} ${CAL_MONTH.getFullYear()}`;
+
+            const firstDay = new Date(CAL_MONTH.getFullYear(), CAL_MONTH.getMonth(), 1);
+            const lastDay = new Date(CAL_MONTH.getFullYear(), CAL_MONTH.getMonth() + 1, 0);
+            const startDay = firstDay.getDay();
+
+            // Cuenta entregas por día
+            const counts = {};
+            for (const t of STATE.tasks) {
+                if (t.status !== 'done' || !t.completed_at) continue;
+                const d = new Date(t.completed_at);
+                if (d.getFullYear() !== CAL_MONTH.getFullYear() || d.getMonth() !== CAL_MONTH.getMonth()) continue;
+                const key = d.getDate();
+                counts[key] = (counts[key] || 0) + 1;
+            }
+
+            const today = new Date();
+            const isThisMonth = today.getFullYear() === CAL_MONTH.getFullYear() && today.getMonth() === CAL_MONTH.getMonth();
+
+            const grid = document.getElementById('cal-grid');
+            let html = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => `<div class="cal-day-header">${d}</div>`).join('');
+            for (let i = 0; i < startDay; i++) html += '<div class="cal-day empty"></div>';
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const isToday = isThisMonth && today.getDate() === day;
+                const c = counts[day] || 0;
+                html += `<div class="cal-day ${isToday ? 'today' : ''}">
+                    <span class="day-num">${day}</span>
+                    ${c > 0 ? `<span class="count">${c}</span>` : ''}
+                </div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        // ── Tab navigation ──
+        document.querySelectorAll('.action-link[data-view]').forEach(t => {
             t.onclick = () => {
-                document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                document.querySelectorAll('.action-link').forEach(x => x.classList.remove('active'));
                 document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
                 t.classList.add('active');
                 document.getElementById('view-' + t.dataset.view).classList.add('active');
                 if (t.dataset.view === 'stats') loadStats();
+                if (t.dataset.view === 'calendar') renderCalendar();
             };
         });
 
-        // Add editor
-        document.getElementById('add-editor-btn').onclick = async () => {
-            const name = prompt('Nombre del nuevo editor:');
+        // Add editor (from config tab)
+        document.getElementById('add-editor-config-btn').onclick = async () => {
+            const name = prompt('Nombre del editor:');
             if (!name) return;
-            try { await api('POST', editorsUrl(), { name, email: '' }); await loadAll(); toast('Editor agregado'); }
-            catch (e) { toast(e.message, true); }
+            await api('POST', editorsUrl(), { name, email: '' });
+            await loadAll();
         };
 
-        // Save settings
+        // Add alias
+        document.getElementById('add-alias-btn').onclick = async () => {
+            const nick = prompt('Apodo (como aparece en Drive):');
+            if (!nick) return;
+            const real = prompt('Nombre real del cliente:');
+            if (!real) return;
+            await api('POST', aliasesUrl(), { nickname: nick, real_name: real });
+            ALIASES = (await api('GET', aliasesUrl())).aliases || [];
+            renderConfig();
+        };
+
+        // Save brand settings
         document.getElementById('save-settings-btn').onclick = async () => {
             const btn = document.getElementById('save-settings-btn');
             btn.disabled = true; btn.textContent = 'Guardando...';
@@ -829,24 +967,22 @@
                 await api('PATCH', tenantUrl(), {
                     brand_name: document.getElementById('set-brand-name').value.trim(),
                     admin_email: document.getElementById('set-admin-email').value.trim(),
-                    input_singular: document.getElementById('set-input-sing').value.trim(),
-                    input_plural: document.getElementById('set-input-plural').value.trim(),
-                    output_singular: document.getElementById('set-output-sing').value.trim(),
-                    output_plural: document.getElementById('set-output-plural').value.trim(),
-                    assignee_singular: document.getElementById('set-assignee-sing').value.trim(),
-                    assignee_plural: document.getElementById('set-assignee-plural').value.trim(),
                 });
                 await loadAll();
-                toast('Configuración guardada');
+                toast('Guardado');
             } catch (e) { toast(e.message, true); }
-            finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+            finally { btn.disabled = false; btn.textContent = 'Guardar marca'; }
         };
+
+        // Calendar nav
+        document.getElementById('cal-prev').onclick = () => { CAL_MONTH = new Date(CAL_MONTH.getFullYear(), CAL_MONTH.getMonth() - 1, 1); renderCalendar(); };
+        document.getElementById('cal-next').onclick = () => { CAL_MONTH = new Date(CAL_MONTH.getFullYear(), CAL_MONTH.getMonth() + 1, 1); renderCalendar(); };
 
         // Folder picker
         document.getElementById('add-assignment-btn').onclick = () => {
             document.getElementById('folder-picker').style.display = 'block';
             document.getElementById('add-assignment-btn').style.display = 'none';
-            FOLDER_PATH = [{ id: 'root', name: 'Mi Unidad' }];
+            FOLDER_PATH = [{id:'root',name:'Mi Unidad'}];
             SELECTED_FOLDER = null;
             loadDriveFolders('root');
         };
@@ -856,29 +992,19 @@
             SELECTED_FOLDER = null;
         };
         document.getElementById('confirm-assignment-btn').onclick = async () => {
-            if (!SELECTED_FOLDER) { toast('Seleccioná una carpeta (click en su nombre)', true); return; }
+            if (!SELECTED_FOLDER) { toast('Seleccioná una carpeta', true); return; }
             const sel = document.getElementById('assign-editor');
             const editor_id = sel.value;
             const editor_name = sel.options[sel.selectedIndex]?.dataset.name || '';
             if (!editor_id) { toast('Seleccioná un editor', true); return; }
             try {
-                await api('POST', assignmentsUrl(), {
-                    folder_id: SELECTED_FOLDER.id, folder_name: SELECTED_FOLDER.name,
-                    editor_id, editor_name,
-                });
+                await api('POST', assignmentsUrl(), { folder_id: SELECTED_FOLDER.id, folder_name: SELECTED_FOLDER.name, editor_id, editor_name });
                 ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || [];
                 renderAssignments();
                 document.getElementById('folder-picker').style.display = 'none';
                 document.getElementById('add-assignment-btn').style.display = '';
                 toast(`Vinculado: ${SELECTED_FOLDER.name} → ${editor_name}`);
             } catch (e) { toast(e.message, true); }
-        };
-
-        // Welcome
-        if (IS_WELCOME) document.getElementById('welcome').style.display = 'flex';
-        document.getElementById('welcome-close').onclick = () => {
-            document.getElementById('welcome').style.display = 'none';
-            window.history.replaceState({}, '', window.location.pathname + '?t=' + encodeURIComponent(TOKEN));
         };
 
         // Init
