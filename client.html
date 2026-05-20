@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi portal — Cargando…</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a0a;
+      --bg-2: #141414;
+      --bg-3: #1c1c1c;
+      --border: #262626;
+      --text: #e8e8e8;
+      --text-dim: #9a9a9a;
+      --text-mute: #666;
+      --accent: #ff6b35;
+      --ok: #4caf50;
+      --warn: #ff9800;
+      --err: #ef5350;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 80px; }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    header .brand-name { font-size: 14px; color: var(--text-dim); }
+    header h1 { font-size: 22px; color: #fff; letter-spacing: -0.01em; font-weight: 700; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,107,53,0.1);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .greet { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+    .greet strong { color: #fff; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    .stat {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 16px;
+    }
+    .stat .label { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .stat .value { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    .stat.accent .value { color: var(--accent); }
+
+    h2 {
+      font-size: 14px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+    .section { margin-bottom: 40px; }
+
+    .task {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 12px;
+      transition: border-color .2s;
+    }
+    .task:hover { border-color: #333; }
+    .task.done { opacity: 0.7; }
+    .task .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .task .title { font-size: 16px; font-weight: 600; color: #fff; }
+    .task .meta { color: var(--text-mute); font-size: 12px; }
+    .task .count {
+      background: var(--bg-3);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .task.done .count { color: var(--ok); }
+    .task .actions { margin-top: 12px; }
+    .btn {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .btn:hover { color: #fff; border-color: #444; }
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn.primary:hover { background: #ff5219; border-color: #ff5219; }
+
+    .timeline-list .ev {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .timeline-list .ev:last-child { border-bottom: none; }
+    .timeline-list .ev .when { color: var(--text-mute); font-size: 12px; min-width: 110px; }
+    .timeline-list .ev .what { color: var(--text); flex: 1; }
+
+    .empty {
+      color: var(--text-mute);
+      text-align: center;
+      padding: 40px 20px;
+      font-size: 14px;
+      background: var(--bg-2);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+    }
+
+    /* Modal */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      padding: 28px;
+    }
+    .modal h3 { color: #fff; font-size: 18px; margin-bottom: 4px; }
+    .modal p.sub { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+    .modal textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      min-height: 100px;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .ok-banner {
+      background: rgba(76,175,80,0.1);
+      border: 1px solid rgba(76,175,80,0.3);
+      color: #88c98a;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+    .err-banner {
+      background: rgba(239,83,80,0.1);
+      border: 1px solid rgba(239,83,80,0.3);
+      color: #ff8a85;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-mute);
+      font-size: 12px;
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <div style="text-align:center;color:var(--text-mute);padding:80px 20px;">
+      <div style="font-size:14px;">Cargando tu portal…</div>
+    </div>
+  </div>
+
+  <!-- Modal pedir revisión -->
+  <div class="modal-bg" id="revModal">
+    <div class="modal">
+      <h3>📝 Pedir un cambio</h3>
+      <p class="sub" id="rev-task-name">—</p>
+      <textarea id="rev-text" placeholder="Contame qué querés cambiar (ej. cortar el segundo 12, cambiar la música, etc.)"></textarea>
+      <div class="modal-actions">
+        <button class="btn" id="rev-cancel">Cancelar</button>
+        <button class="btn primary" id="rev-submit">Enviar pedido</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Parsear /c/<tenant>/<token>
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (parts.length < 3 || parts[0] !== 'c') {
+      document.getElementById('app').innerHTML = '<div class="empty"><h1 style="color:#fff;font-size:20px;margin-bottom:8px;">Link inválido</h1>Pediles a tu equipo el link correcto a tu portal.</div>';
+      throw new Error('bad url');
+    }
+    const TENANT = parts[1];
+    const TOKEN = parts[2];
+    const API = `/api/client_portal?tenant=${encodeURIComponent(TENANT)}&client_token=${encodeURIComponent(TOKEN)}`;
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const fmtDate = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffDays = Math.floor(diffMs / (1000*60*60*24));
+      if (diffDays === 0) return 'hoy';
+      if (diffDays === 1) return 'ayer';
+      if (diffDays < 7) return `hace ${diffDays} días`;
+      return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+    };
+
+    const EVENT_LABELS = {
+      file_uploaded: (e) => `📥 Subiste ${e.payload?.count || 1} archivo(s)`,
+      file_delivered: (e) => `📤 Te entregamos ${e.payload?.count || 1} archivo(s)`,
+      task_done: (e) => `✅ Pedido completado`,
+      task_created: (e) => `🆕 Pedido creado`,
+      task_reassigned: (e) => `🔄 Reasignado al equipo`,
+      urgent_set: (e) => `🚨 Marcado urgente`,
+      revision_requested: (e) => `📝 Pediste un cambio${e.payload?.message_preview ? ': "' + e.payload.message_preview + '"' : ''}`,
+      comment_added: (e) => `💬 Comentario del equipo`,
+    };
+
+    let DATA = null;
+    let currentTaskId = null;
+
+    async function load() {
+      try {
+        const r = await fetch(API);
+        if (!r.ok) throw new Error('No se pudo cargar el portal');
+        DATA = await r.json();
+        document.title = `Mi portal · ${DATA.brand_name || 'Asistente'}`;
+        render();
+      } catch(e) {
+        document.getElementById('app').innerHTML = `<div class="empty"><h1 style="color:#fff;font-size:20px;margin-bottom:8px;">Link inválido o expirado</h1>Pediles a tu equipo un link nuevo.<br><br><span style="font-size:11px;color:#444;">${esc(e.message)}</span></div>`;
+      }
+    }
+
+    function render() {
+      const brand = esc(DATA.brand_name || 'Equipo');
+      const clientName = esc(DATA.client?.name || 'Cliente');
+      const pending = DATA.tasks_pending || [];
+      const done = DATA.tasks_done || [];
+      const tl = DATA.timeline || [];
+
+      const totalPending = pending.reduce((s,t) => s + (t.pending_count || 1), 0);
+
+      document.getElementById('app').innerHTML = `
+        <header>
+          <div style="flex:1;">
+            <div class="brand-name">${brand}</div>
+            <h1>Mi portal</h1>
+          </div>
+          <span class="badge">Cliente</span>
+        </header>
+
+        <p class="greet">Hola <strong>${clientName}</strong> 👋. Este es el estado de tus pedidos en tiempo real.</p>
+
+        <div class="ok-banner" id="ok-banner"></div>
+        <div class="err-banner" id="err-banner"></div>
+
+        <div class="stats">
+          <div class="stat accent">
+            <div class="label">Pendientes</div>
+            <div class="value">${totalPending}</div>
+          </div>
+          <div class="stat">
+            <div class="label">En curso</div>
+            <div class="value">${pending.length}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Entregados</div>
+            <div class="value">${done.length}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>En curso</h2>
+          ${pending.length === 0 ? '<div class="empty">No hay pedidos en curso 🎉</div>' : pending.map(renderTask).join('')}
+        </div>
+
+        ${done.length > 0 ? `
+          <div class="section">
+            <h2>Últimas entregas</h2>
+            ${done.map(t => renderTask(t, true)).join('')}
+          </div>
+        ` : ''}
+
+        ${tl.length > 0 ? `
+          <div class="section">
+            <h2>Historial</h2>
+            <div class="timeline-list">
+              ${tl.map(renderEvent).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <footer>
+          Portal generado por <strong>${brand}</strong> — Powered by Asistente
+        </footer>
+      `;
+
+      document.querySelectorAll('[data-rev-task]').forEach(btn => {
+        btn.onclick = () => openRevisionModal(btn.dataset.revTask, btn.dataset.revTitle);
+      });
+    }
+
+    function renderTask(t, isDone = false) {
+      const count = t.pending_count || 1;
+      return `
+        <div class="task ${isDone ? 'done' : ''}">
+          <div class="top">
+            <div>
+              <div class="title">${esc(t.title || t.client)}</div>
+              <div class="meta">${isDone ? '✅ Entregado ' + fmtDate(t.completed_at) : '⏳ Pendiente desde ' + fmtDate(t.created_at)}</div>
+              ${t.notes ? `<div class="meta" style="margin-top:4px;color:var(--text-dim);">📝 ${esc(t.notes)}</div>` : ''}
+            </div>
+            <div class="count">${isDone ? '✓' : count + (count === 1 ? ' pendiente' : ' pendientes')}</div>
+          </div>
+          ${!isDone ? `
+            <div class="actions">
+              <button class="btn" data-rev-task="${esc(t.id)}" data-rev-title="${esc(t.title || t.client)}">📝 Pedir un cambio</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderEvent(e) {
+      const labelFn = EVENT_LABELS[e.type];
+      const label = labelFn ? labelFn(e) : e.type;
+      return `<div class="ev"><div class="when">${fmtDate(e.ts)}</div><div class="what">${esc(label)}</div></div>`;
+    }
+
+    // Modal revisión
+    function openRevisionModal(taskId, taskTitle) {
+      currentTaskId = taskId;
+      document.getElementById('rev-task-name').textContent = `Sobre: ${taskTitle}`;
+      document.getElementById('rev-text').value = '';
+      document.getElementById('revModal').classList.add('open');
+      setTimeout(() => document.getElementById('rev-text').focus(), 50);
+    }
+    document.getElementById('rev-cancel').onclick = () => document.getElementById('revModal').classList.remove('open');
+    document.getElementById('revModal').addEventListener('click', e => {
+      if (e.target.id === 'revModal') document.getElementById('revModal').classList.remove('open');
+    });
+    document.getElementById('rev-submit').onclick = async () => {
+      const text = document.getElementById('rev-text').value.trim();
+      if (!text) { alert('Contame qué querés cambiar'); return; }
+      const btn = document.getElementById('rev-submit');
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      try {
+        const r = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_id: currentTaskId, message: text }),
+        });
+        if (!r.ok) throw new Error('Error al enviar');
+        document.getElementById('revModal').classList.remove('open');
+        const ok = document.getElementById('ok-banner');
+        ok.textContent = '✅ Listo. El equipo recibió tu pedido y se va a poner con eso enseguida.';
+        ok.style.display = 'block';
+        setTimeout(() => { ok.style.display = 'none'; }, 6000);
+        // Recargar
+        load();
+      } catch(e) {
+        const err = document.getElementById('err-banner');
+        err.textContent = '❌ No se pudo enviar. Intentá de nuevo o escribile directo al equipo.';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Enviar pedido';
+      }
+    };
+
+    load();
+    // Auto-refresh cada 2 min para que el cliente vea cambios en vivo
+    setInterval(load, 120000);
+  </script>
+</body>
+</html>

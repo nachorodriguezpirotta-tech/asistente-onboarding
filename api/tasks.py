@@ -20,7 +20,7 @@ import secrets as _secrets
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response, read_json_body
+from _shared import kv_get, kv_set, json_response, read_json_body, timeline_add
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
@@ -88,6 +88,11 @@ class handler(BaseHTTPRequestHandler):
         }
         tasks.append(new_task)
         kv_set(f"tenant:{tenant_id}:tasks", tasks)
+        try:
+            timeline_add(tenant_id, "task_created", client=client, actor="manual",
+                         payload={"task_id": new_task["id"], "assignee": assignee, "title": new_task["title"]})
+        except Exception:
+            pass
         return json_response(self, {"ok": True, "task": new_task})
 
     def do_PATCH(self):
@@ -105,8 +110,13 @@ class handler(BaseHTTPRequestHandler):
 
         tasks = kv_get(f"tenant:{tenant_id}:tasks") or []
         updated = None
+        events_to_emit = []
         for t in tasks:
             if t.get("id") == tid:
+                prev_assignee = t.get("assignee", "")
+                prev_status = t.get("status", "pending")
+                prev_urgent = bool(t.get("urgent", False))
+                prev_count = int(t.get("pending_count", 0))
                 # Campos string
                 for field in ("client", "title", "assignee", "notes", "status"):
                     if field in data:
@@ -126,11 +136,30 @@ class handler(BaseHTTPRequestHandler):
                     t["completed_at"] = now_iso()
                 elif t.get("status") == "pending":
                     t.pop("completed_at", None)
+                # Detectar cambios para timeline
+                cli = t.get("client", "")
+                tid_ = t["id"]
+                if t.get("assignee", "") != prev_assignee:
+                    events_to_emit.append(("task_reassigned", cli, {"task_id": tid_, "from": prev_assignee, "to": t.get("assignee", "")}))
+                if t.get("status") != prev_status:
+                    if t.get("status") == "done":
+                        events_to_emit.append(("task_done", cli, {"task_id": tid_, "by": t.get("assignee", "")}))
+                    else:
+                        events_to_emit.append(("task_reopened", cli, {"task_id": tid_}))
+                if bool(t.get("urgent", False)) != prev_urgent and t.get("urgent"):
+                    events_to_emit.append(("urgent_set", cli, {"task_id": tid_}))
+                if int(t.get("pending_count", 0)) != prev_count:
+                    events_to_emit.append(("count_changed", cli, {"task_id": tid_, "from": prev_count, "to": int(t.get("pending_count", 0))}))
                 updated = t
                 break
         if not updated:
             return json_response(self, {"error": "Task no encontrada"}, 404)
         kv_set(f"tenant:{tenant_id}:tasks", tasks)
+        for ev_type, cli, payload in events_to_emit:
+            try:
+                timeline_add(tenant_id, ev_type, client=cli, actor="manual", payload=payload)
+            except Exception:
+                pass
         return json_response(self, {"ok": True, "task": updated})
 
     def do_DELETE(self):

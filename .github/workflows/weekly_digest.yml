@@ -1,0 +1,76 @@
+name: Weekly digest (todos los tenants)
+
+# Cada lunes 8 AM Argentina (UTC-3 → 11 AM UTC): manda el resumen semanal
+# a cada tenant con OAuth configurado.
+
+on:
+  schedule:
+    - cron: '0 11 * * 1'   # lunes 11:00 UTC = 8:00 AR
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Send weekly digest a todos los tenants
+        env:
+          ONBOARDING_URL: ${{ secrets.ONBOARDING_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          DASHBOARD_SECRET: ${{ secrets.DASHBOARD_SECRET }}
+        run: |
+          if [ -z "$ONBOARDING_URL" ] || [ -z "$ADMIN_TOKEN" ] || [ -z "$DASHBOARD_SECRET" ]; then
+            echo "⚠️  Faltan secrets — skip"
+            exit 0
+          fi
+
+          python3 <<'PYEOF'
+          import os, json, hmac, hashlib
+          import urllib.request, urllib.parse
+
+          URL = os.environ["ONBOARDING_URL"].rstrip("/")
+          ADMIN = os.environ["ADMIN_TOKEN"]
+          SECRET = os.environ["DASHBOARD_SECRET"]
+
+          def make_token(tid):
+              return hmac.new(SECRET.encode(), tid.encode(), hashlib.sha256).hexdigest()[:24]
+
+          # Listar tenants con OAuth
+          req = urllib.request.Request(f"{URL}/api/admin_list?t={urllib.parse.quote(ADMIN)}")
+          try:
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  data = json.load(r)
+          except Exception as e:
+              print(f"❌ admin_list failed: {e}")
+              exit(0)
+
+          pedidos = data.get("pedidos", [])
+          tenant_ids = [p["id"] for p in pedidos if p.get("has_oauth")]
+          print(f"📊 {len(tenant_ids)} tenants → enviando digest semanal")
+
+          sent_count = 0
+          for tid in tenant_ids:
+              token = make_token(tid)
+              try:
+                  body = json.dumps({"send": True}).encode()
+                  req = urllib.request.Request(
+                      f"{URL}/api/weekly_digest?tenant={tid}&t={token}",
+                      data=body, method="POST",
+                  )
+                  req.add_header("Content-Type", "application/json")
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      resp = json.load(r)
+                  if resp.get("sent"):
+                      sent_count += 1
+                      print(f"  ✓ {tid}: enviado")
+                  else:
+                      print(f"  ⚠️  {tid}: no enviado ({resp.get('send_error', 'sin razón')})")
+              except Exception as e:
+                  print(f"  ❌ {tid}: {e}")
+
+          print(f"\n✅ {sent_count}/{len(tenant_ids)} digests enviados.")
+          PYEOF

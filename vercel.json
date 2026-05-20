@@ -11,6 +11,7 @@
     { "source": "/pricing", "destination": "/pricing.html" },
     { "source": "/about", "destination": "/about.html" },
     { "source": "/dashboard/:tenant_id", "destination": "/dashboard.html" },
+    { "source": "/c/:tenant_id/:client_token", "destination": "/client.html" },
     { "source": "/api/tenant/:id", "destination": "/api/tenant" }
   ]
 }

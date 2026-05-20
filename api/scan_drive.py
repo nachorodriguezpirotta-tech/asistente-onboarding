@@ -30,7 +30,7 @@ from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response
+from _shared import kv_get, kv_set, json_response, timeline_add
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
@@ -139,6 +139,61 @@ def send_mail_from_tenant(access_token: str, to: str, from_name: str, subject: s
     except Exception as e:
         print(f"⚠️  Send mail failed: {e}")
         return False
+
+
+def notify_client_delivery(tenant: dict, client_record: dict, task: dict, access_token: str, output_folder_id: str = ""):
+    """Manda mail al cliente final avisando que su pedido está listo."""
+    to_email = (client_record.get("email") or "").strip()
+    if not to_email:
+        return False
+    brand = tenant.get("brand_name") or tenant.get("business_name") or "Equipo"
+    client_name = client_record.get("name", "")
+    drive_link = f"https://drive.google.com/drive/folders/{output_folder_id}" if output_folder_id else ""
+    portal_token = client_record.get("portal_token", "")
+    portal_link = ""
+    tenant_id = tenant.get("id") or tenant.get("tenant_id") or ""
+    if portal_token and tenant_id:
+        portal_link = f"/c/{tenant_id}/{portal_token}"  # solo path — el cliente lo abre desde mail con base URL del mismo dominio (mejor armar absoluto si lo tenemos)
+
+    subject = f"✅ Tu pedido está listo · {brand}"
+    text = f"""Hola {client_name},
+
+Tu material está listo. Te lo dejamos en esta carpeta:
+{drive_link}
+
+Si querés pedir un cambio o ver el estado de todos tus pedidos, entrá acá:
+{portal_link}
+
+— {brand}
+"""
+    html = f"""<html><body style="font-family:-apple-system,Segoe UI,sans-serif;max-width:600px;color:#222;line-height:1.6;">
+<h2 style="color:#ff6b35;">✅ Tu pedido está listo</h2>
+<p>Hola <strong>{client_name}</strong>,</p>
+<p>Tu material está listo. Podés descargarlo desde Drive:</p>
+{f'<p style="margin:20px 0;"><a href="{drive_link}" style="background:#ff6b35;color:white;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;">📁 Ver en Drive</a></p>' if drive_link else ''}
+{f'<p style="margin:20px 0;"><a href="{portal_link}" style="color:#ff6b35;">Ver todos tus pedidos / pedir cambios →</a></p>' if portal_link else ''}
+<hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+<p style="color:#888;font-size:12px;">— {brand}</p>
+</body></html>"""
+    return send_mail_from_tenant(access_token, to_email, brand, subject, text, html)
+
+
+def find_client_record(tenant_id: str, client_name: str) -> dict:
+    """Busca un registro de cliente por nombre fuzzy (substring case-insensitive)."""
+    clients = kv_get(f"tenant:{tenant_id}:clients") or []
+    cn = (client_name or "").lower().strip()
+    if not cn:
+        return None
+    # exact match primero
+    for c in clients:
+        if c.get("name", "").lower() == cn:
+            return c
+    # substring
+    for c in clients:
+        nm = c.get("name", "").lower()
+        if nm and (cn in nm or nm in cn):
+            return c
+    return None
 
 
 def notify_editor_new_task(tenant: dict, editor: dict, task: dict, access_token: str, folder_id: str):
@@ -326,6 +381,15 @@ class handler(BaseHTTPRequestHandler):
                     except Exception as e:
                         errors.append(f"mail a {editor_name}: {e}")
 
+                # Timeline: archivo(s) subido(s) por el cliente
+                try:
+                    timeline_add(tenant_id, "file_uploaded", client=real_client_name,
+                                 actor="cliente",
+                                 payload={"count": new_inputs, "task_id": task_to_notify["id"],
+                                          "editor": editor_name, "is_new_task": is_new_task})
+                except Exception:
+                    pass
+
             # Si hay editados nuevos → reducir count
             if new_outputs > 0 and existing_task:
                 current = existing_task.get("pending_count") or 1
@@ -335,8 +399,34 @@ class handler(BaseHTTPRequestHandler):
                     existing_task["completed_at"] = now_iso()
                     existing_task["pending_count"] = 0
                     completed_count += 1
+                    # Timeline: entrega cerrada
+                    try:
+                        timeline_add(tenant_id, "task_done", client=real_client_name,
+                                     actor=editor_name,
+                                     payload={"task_id": existing_task["id"], "auto": True})
+                    except Exception:
+                        pass
+                    # Mail al cliente final si tenemos su email
+                    try:
+                        client_record = find_client_record(tenant_id, real_client_name)
+                        if client_record and client_record.get("email"):
+                            # Asegurar que tenant tenga su id para armar portal link
+                            if "id" not in tenant:
+                                tenant["id"] = tenant_id
+                            notify_client_delivery(tenant, client_record, existing_task, access_token, output_folder_id)
+                    except Exception as e:
+                        errors.append(f"mail cliente {real_client_name}: {e}")
                 else:
                     existing_task["pending_count"] = new_count
+
+                # Timeline: archivo entregado
+                try:
+                    timeline_add(tenant_id, "file_delivered", client=real_client_name,
+                                 actor=editor_name,
+                                 payload={"count": new_outputs, "task_id": existing_task["id"],
+                                          "remaining": new_count})
+                except Exception:
+                    pass
 
         # Guardar
         kv_set(f"tenant:{tenant_id}:known_files", list(known_files))

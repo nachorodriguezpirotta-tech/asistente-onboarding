@@ -171,6 +171,84 @@ def _notify_access_token() -> str:
         return json.loads(resp.read())["access_token"]
 
 
+def notify_via_tenant(tenant_id: str, to_email: str, subject: str, body_text: str, body_html: Optional[str] = None) -> bool:
+    """Manda mail desde la cuenta Gmail del tenant (usa su OAuth refresh_token).
+
+    Usado para: notificar a un cliente del tenant (ej. "tu pedido está listo").
+    El mail sale desde la cuenta del dueño de la agencia, no desde una cuenta nuestra.
+    """
+    import base64
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    tenant = kv_get(f"tenant:{tenant_id}")
+    if not tenant:
+        return False
+    refresh = tenant.get("oauth_refresh_token", "")
+    if not refresh:
+        return False
+
+    try:
+        data = urllib.parse.urlencode({
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "refresh_token": refresh,
+            "grant_type": "refresh_token",
+        }).encode()
+        req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            access_token = json.loads(r.read())["access_token"]
+    except Exception as e:
+        print(f"notify_via_tenant: refresh failed: {e}")
+        return False
+
+    msg = MIMEMultipart("alternative")
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg["From"] = tenant.get("brand_name") or tenant.get("business_name") or "Equipo"
+    msg.attach(MIMEText(body_text, "plain", "utf-8"))
+    if body_html:
+        msg.attach(MIMEText(body_html, "html", "utf-8"))
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+
+    try:
+        req = urllib.request.Request(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            data=json.dumps({"raw": raw}).encode(),
+            method="POST",
+        )
+        req.add_header("Authorization", f"Bearer {access_token}")
+        req.add_header("Content-Type", "application/json")
+        urllib.request.urlopen(req, timeout=10)
+        return True
+    except Exception as e:
+        print(f"notify_via_tenant send failed: {e}")
+        return False
+
+
+def timeline_add(tenant_id: str, event_type: str, client: str = "", actor: str = "", payload: Optional[dict] = None, max_events: int = 500):
+    """Agrega un evento al timeline del tenant.
+
+    event_type: 'task_created', 'task_done', 'task_reassigned', 'file_uploaded', 'file_delivered',
+                'comment_added', 'revision_requested', 'urgent_set', 'count_changed'
+    """
+    import datetime
+    key = f"tenant:{tenant_id}:timeline"
+    events = kv_get(key) or []
+    event = {
+        "ts": datetime.datetime.utcnow().isoformat() + "Z",
+        "type": event_type,
+        "client": client,
+        "actor": actor,
+        "payload": payload or {},
+    }
+    events.insert(0, event)  # más reciente primero
+    if len(events) > max_events:
+        events = events[:max_events]
+    kv_set(key, events, ttl_seconds=90 * 24 * 3600)  # 90 días
+    return event
+
+
 def notify_admin(subject: str, body_text: str, body_html: Optional[str] = None):
     """Manda mail al admin (vos). Silently no-op si no está configurado."""
     if not ADMIN_NOTIFY_EMAIL or not NOTIFY_MAIL_REFRESH_TOKEN:

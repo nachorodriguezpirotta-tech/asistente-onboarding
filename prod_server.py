@@ -69,6 +69,14 @@ API_ROUTES = {
     "/api/aliases": "aliases",
     "/api/drive_folder_info": "drive_folder_info",
     "/api/scan_drive": "scan_drive",
+    # Nuevas APIs (timeline, comentarios, clientes, portal, IA chat, weekly digest, revisiones)
+    "/api/timeline": "timeline",
+    "/api/comments": "comments",
+    "/api/clients": "clients",
+    "/api/client_portal": "client_portal",
+    "/api/chat": "chat",
+    "/api/weekly_digest": "weekly_digest",
+    "/api/revisions": "revisions",
 }
 API_PREFIX_ROUTES = {
     "/api/tenant/": "tenant",
@@ -123,6 +131,10 @@ class ProdHandler(http.server.SimpleHTTPRequestHandler):
         # Ruta dinámica /dashboard/<tenant_id> → dashboard.html
         if self.path.startswith("/dashboard/"):
             self.path = "/dashboard.html"
+            return super().do_GET()
+        # Ruta dinámica /c/<tenant_id>/<client_token> → client.html (portal del cliente)
+        if self.path.startswith("/c/"):
+            self.path = "/client.html"
             return super().do_GET()
         mapping = {
             "/": "/index.html",
