@@ -271,6 +271,8 @@ API_ROUTES = {
     # Multi-tenant API:
     "/api/editors": "editors",
     "/api/tasks": "tasks",
+    "/api/drive_folders": "drive_folders",
+    "/api/folder_assignments": "folder_assignments",
 }
 # Rutas dinámicas (matchear prefijo):
 API_PREFIX_ROUTES = {

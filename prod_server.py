@@ -63,6 +63,8 @@ API_ROUTES = {
     "/api/track": "track",
     "/api/editors": "editors",
     "/api/tasks": "tasks",
+    "/api/drive_folders": "drive_folders",
+    "/api/folder_assignments": "folder_assignments",
 }
 API_PREFIX_ROUTES = {
     "/api/tenant/": "tenant",
