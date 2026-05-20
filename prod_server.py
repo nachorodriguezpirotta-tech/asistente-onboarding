@@ -67,6 +67,7 @@ API_ROUTES = {
     "/api/folder_assignments": "folder_assignments",
     "/api/tenant_stats": "tenant_stats",
     "/api/aliases": "aliases",
+    "/api/drive_folder_info": "drive_folder_info",
 }
 API_PREFIX_ROUTES = {
     "/api/tenant/": "tenant",

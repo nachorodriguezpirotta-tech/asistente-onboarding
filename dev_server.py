@@ -275,6 +275,7 @@ API_ROUTES = {
     "/api/folder_assignments": "folder_assignments",
     "/api/tenant_stats": "tenant_stats",
     "/api/aliases": "aliases",
+    "/api/drive_folder_info": "drive_folder_info",
 }
 # Rutas dinámicas (matchear prefijo):
 API_PREFIX_ROUTES = {
