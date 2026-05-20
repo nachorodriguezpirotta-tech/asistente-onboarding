@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: asistente-onboarding
+    runtime: python
+    region: oregon          # más cerca de US East para Vercel KV
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python3 prod_server.py"
+    autoDeploy: true        # re-deploy en cada push a main
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # Las demás env vars (GOOGLE_*, KV_*, etc.) las cargás manual desde
+      # el dashboard de Render → Settings → Environment.
