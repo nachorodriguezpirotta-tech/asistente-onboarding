@@ -15,6 +15,7 @@ Esto se llama:
   - Periódicamente desde el cron en GitHub Actions
 """
 
+import base64
 import datetime
 import hashlib
 import hmac
@@ -24,6 +25,8 @@ import secrets as _secrets
 import urllib.error
 import urllib.parse
 import urllib.request
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -111,6 +114,70 @@ def now_iso():
     return datetime.datetime.utcnow().isoformat() + "Z"
 
 
+def send_mail_from_tenant(access_token: str, to: str, from_name: str, subject: str, text: str, html: str = None) -> bool:
+    """Envía mail desde la cuenta Google del tenant via Gmail API."""
+    if not to:
+        return False
+    msg = MIMEMultipart("alternative")
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg["From"] = from_name
+    msg.attach(MIMEText(text, "plain", "utf-8"))
+    if html:
+        msg.attach(MIMEText(html, "html", "utf-8"))
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+    try:
+        req = urllib.request.Request(
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+            data=json.dumps({"raw": raw}).encode(),
+            method="POST",
+        )
+        req.add_header("Authorization", f"Bearer {access_token}")
+        req.add_header("Content-Type", "application/json")
+        urllib.request.urlopen(req, timeout=10)
+        return True
+    except Exception as e:
+        print(f"⚠️  Send mail failed: {e}")
+        return False
+
+
+def notify_editor_new_task(tenant: dict, editor: dict, task: dict, access_token: str, folder_id: str):
+    """Manda mail al editor avisando que tiene tarea nueva."""
+    editor_email = editor.get("email", "").strip()
+    if not editor_email:
+        return False  # editor sin email — skip
+
+    brand = tenant.get("brand_name", "Asistente")
+    drive_link = f"https://drive.google.com/drive/folders/{folder_id}" if folder_id else ""
+    count = task.get("pending_count", 1)
+    output_singular = tenant.get("output_singular", "tarea")
+    output_plural = tenant.get("output_plural", "tareas")
+    cliente = task["client"]
+    count_label = f"{count} {output_singular if count == 1 else output_plural}"
+
+    subject = f"🎬 Tenés trabajo nuevo de {cliente} — {count_label}"
+    text = f"""Hola {editor.get('name')},
+
+Te asignaron trabajo nuevo de {cliente}:
+{count_label} nuevo{'s' if count != 1 else ''} en Drive.
+
+Carpeta en Drive:
+{drive_link}
+
+— {brand}
+"""
+    html = f"""<html><body style="font-family:-apple-system,Segoe UI,sans-serif;max-width:600px;color:#222;line-height:1.6;">
+<h2 style="color:#ff6b35;">🎬 Trabajo nuevo de {cliente}</h2>
+<p>Hola <strong>{editor.get('name')}</strong>,</p>
+<p>Te asignaron trabajo nuevo: <strong>{count_label}</strong> nuevo{'s' if count != 1 else ''} en Drive.</p>
+{f'<p style="margin:20px 0;"><a href="{drive_link}" style="background:#ff6b35;color:white;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;">📁 Abrir carpeta en Drive</a></p>' if drive_link else ''}
+<hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+<p style="color:#888;font-size:12px;">— {brand}</p>
+</body></html>"""
+
+    return send_mail_from_tenant(access_token, editor_email, brand, subject, text, html)
+
+
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
@@ -150,6 +217,8 @@ class handler(BaseHTTPRequestHandler):
 
         known_files = set(kv_get(f"tenant:{tenant_id}:known_files") or [])
         tasks = kv_get(f"tenant:{tenant_id}:tasks") or []
+        editors = kv_get(f"tenant:{tenant_id}:editors") or []
+        editors_by_name = {e["name"]: e for e in editors}
 
         try:
             access_token = refresh_access_token(refresh)
@@ -195,22 +264,21 @@ class handler(BaseHTTPRequestHandler):
                 if not has_valid_extension(f["name"]):
                     known_files.add(f["id"])  # ignorar pero no re-procesar
                     continue
-                # Marcar como conocido sin importar
+                # Marcar como conocido
                 known_files.add(f["id"])
-                # Si es muy viejo, baseline → solo conocido, sin task
-                if is_too_old(f.get("createdTime", "")):
-                    continue
                 new_files_in_folder += 1
 
             if new_files_in_folder == 0:
                 continue
 
             # Crear o updatear task
+            is_new_task = False
             if existing_task:
                 # Sumar al pending_count existente
                 existing_task["pending_count"] = (existing_task.get("pending_count") or 1) + new_files_in_folder
+                task_to_notify = existing_task
             else:
-                tasks.append({
+                task_to_notify = {
                     "id": _secrets.token_urlsafe(6),
                     "client": real_client_name,
                     "title": real_client_name,
@@ -222,8 +290,18 @@ class handler(BaseHTTPRequestHandler):
                     "created_at": now_iso(),
                     "auto_created": True,
                     "source_folder_id": folder_id,
-                })
+                }
+                tasks.append(task_to_notify)
                 new_tasks_count += 1
+                is_new_task = True
+
+            # ── Mandar mail al editor ──
+            editor_obj = editors_by_name.get(editor_name)
+            if editor_obj and editor_obj.get("email") and not editor_obj.get("on_vacation"):
+                try:
+                    notify_editor_new_task(tenant, editor_obj, task_to_notify, access_token, folder_id)
+                except Exception as e:
+                    errors.append(f"mail a {editor_name}: {e}")
 
         # Guardar
         kv_set(f"tenant:{tenant_id}:known_files", list(known_files))

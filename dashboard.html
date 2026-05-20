@@ -1098,11 +1098,30 @@
             btn.disabled = false; btn.textContent = '🔄 Escanear Drive ahora';
         };
 
+        // ── Auto-scan silencioso ──
+        async function autoScan() {
+            if (IS_EDITOR_MODE) return;  // editores no triggerean scan
+            try {
+                const r = await api('POST', scanDriveUrl());
+                if (r.new_tasks > 0) {
+                    toast(`🔔 ${r.new_tasks} ${r.new_tasks > 1 ? 'tareas nuevas' : 'tarea nueva'} desde Drive`);
+                    await loadAll();
+                }
+            } catch (e) {
+                // silencioso
+            }
+        }
+
         // Init
         if (!TENANT_ID || !TOKEN || TENANT_ID === 'dashboard.html') {
             document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#888;"><h1 style="color:#fff;">Link inválido</h1></div>';
         } else {
-            loadAll();
+            loadAll().then(() => {
+                // Auto-scan inicial 2s después de cargar (no bloquea el render)
+                setTimeout(autoScan, 2000);
+                // Y cada 90s
+                setInterval(autoScan, 90 * 1000);
+            });
         }
     </script>
 

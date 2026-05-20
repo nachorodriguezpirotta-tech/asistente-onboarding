@@ -1,15 +1,20 @@
 """
 GET    /api/folder_assignments?tenant=<id>&t=<token>           → lista
-POST   /api/folder_assignments?tenant=<id>&t=<token>  body: {folder_id, folder_name, editor_id, editor_name}  → asignar
+POST   /api/folder_assignments?tenant=<id>&t=<token>  body: {folder_id, folder_name, editor_id, editor_name}  → asignar (hace baseline)
 DELETE /api/folder_assignments?tenant=<id>&t=<token>&folder_id=<id>  → desasignar
 
-Cada tenant tiene un mapeo `folder_id → editor` que define qué editor recibe
-las tareas automáticas cuando aparecen archivos nuevos en esa carpeta de Drive.
+Al crear un assignment NUEVO, hace baseline scan de la carpeta:
+marca todos los archivos actuales como "ya conocidos" (no genera tareas para ellos).
+Solo los archivos que se suban DESPUÉS van a generar tareas.
 """
 
 import hashlib
 import hmac
+import json
 import os
+import urllib.error
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -17,11 +22,60 @@ from _shared import kv_get, kv_set, json_response, read_json_body
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 
 
 def verify_token(tenant_id, token):
     expected = hmac.new(SECRET.encode(), tenant_id.encode(), hashlib.sha256).hexdigest()[:24]
     return hmac.compare_digest(expected, token or "")
+
+
+def refresh_access_token(refresh_token: str) -> str:
+    data = urllib.parse.urlencode({
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token",
+    }).encode()
+    req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data, method="POST")
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.loads(r.read())["access_token"]
+
+
+def list_all_file_ids_in_folder(access_token: str, folder_id: str) -> list:
+    """Lista TODOS los archivos (no carpetas) de la carpeta. Devuelve solo IDs."""
+    q = f"'{folder_id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed=false"
+    params = {
+        "q": q, "fields": "files(id)", "pageSize": "1000",
+        "supportsAllDrives": "true", "includeItemsFromAllDrives": "true",
+    }
+    url = "https://www.googleapis.com/drive/v3/files?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url)
+    req.add_header("Authorization", f"Bearer {access_token}")
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return [f["id"] for f in json.loads(r.read()).get("files", [])]
+
+
+def do_baseline(tenant_id: str, folder_id: str):
+    """Marca todos los archivos actuales de la carpeta como conocidos."""
+    tenant = kv_get(f"tenant:{tenant_id}")
+    if not tenant:
+        return 0
+    refresh = tenant.get("oauth_refresh_token", "")
+    if not refresh:
+        return 0
+    try:
+        access_token = refresh_access_token(refresh)
+        existing_ids = list_all_file_ids_in_folder(access_token, folder_id)
+    except Exception as e:
+        print(f"⚠️  Baseline falló para {folder_id}: {e}")
+        return 0
+
+    known = set(kv_get(f"tenant:{tenant_id}:known_files") or [])
+    known.update(existing_ids)
+    kv_set(f"tenant:{tenant_id}:known_files", list(known))
+    return len(existing_ids)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -65,7 +119,8 @@ class handler(BaseHTTPRequestHandler):
             return json_response(self, {"error": "Falta folder_id o editor_id"}, 400)
 
         assignments = kv_get(f"tenant:{tenant_id}:folder_assignments") or []
-        # Remover el assignment existente de este folder (si lo hay) — solo 1 editor por carpeta
+        is_new = not any(a.get("folder_id") == folder_id for a in assignments)
+        # Si el folder ya existía (re-assign), no rehacer baseline (ya lo tiene)
         assignments = [a for a in assignments if a.get("folder_id") != folder_id]
         assignments.append({
             "folder_id": folder_id,
@@ -74,7 +129,18 @@ class handler(BaseHTTPRequestHandler):
             "editor_name": editor_name,
         })
         kv_set(f"tenant:{tenant_id}:folder_assignments", assignments)
-        return json_response(self, {"ok": True, "assignments": assignments})
+
+        # Baseline: marcar archivos actuales como ya conocidos
+        baseline_count = 0
+        if is_new:
+            baseline_count = do_baseline(tenant_id, folder_id)
+
+        return json_response(self, {
+            "ok": True,
+            "assignments": assignments,
+            "baseline_files": baseline_count,
+            "message": f"Carpeta vinculada. {baseline_count} archivos existentes marcados como baseline (no van a generar tareas). Solo los archivos NUEVOS que subas van a aparecer." if is_new else "Carpeta re-asignada (baseline ya hecho previamente).",
+        })
 
     def do_DELETE(self):
         tenant_id = self._auth()
