@@ -49,12 +49,34 @@ _real_shared_spec.loader.exec_module(_real_shared)
 # Crear módulo _shared MOCK
 import types
 
+# Storage persistente en disco para sobrevivir reinicios del dev_server
+_KV_FILE = BASE / ".dev_kv.json"
 _kv_memory: dict = {}
 _logs: list = []
 
 
+def _kv_load():
+    global _kv_memory
+    if _KV_FILE.exists():
+        try:
+            _kv_memory = json.loads(_KV_FILE.read_text())
+        except Exception:
+            _kv_memory = {}
+
+
+def _kv_save():
+    try:
+        _KV_FILE.write_text(json.dumps(_kv_memory))
+    except Exception:
+        pass
+
+
+_kv_load()
+
+
 def _mock_kv_set(key, value, ttl_seconds=None):
     _kv_memory[key] = {"value": json.dumps(value) if isinstance(value, dict) else value, "ts": time.time()}
+    _kv_save()
 
 
 def _mock_kv_get(key):
@@ -89,6 +111,7 @@ def _mock_kv_request(command_list):
     if cmd == "SET":
         key, value = command_list[1], command_list[2]
         _kv_memory[key] = {"value": value, "ts": time.time()}
+        _kv_save()
         return {"result": "OK"}
     if cmd == "INCR":
         key = command_list[1]
@@ -96,6 +119,7 @@ def _mock_kv_request(command_list):
         current = int(rec["value"]) if rec else 0
         new = current + 1
         _kv_memory[key] = {"value": str(new), "ts": time.time()}
+        _kv_save()
         return {"result": new}
     if cmd == "EXPIRE":
         return {"result": 1}  # noop en mock

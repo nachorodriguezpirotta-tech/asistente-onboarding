@@ -97,30 +97,39 @@ class handler(BaseHTTPRequestHandler):
             "oauth_received_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
         })
 
+        # ── NOTIFICAR SIEMPRE AL ADMIN (vos) ─────────────────────────────
+        # Sin importar si el workflow se dispara o no, te avisamos por mail
+        # que llegó un pedido nuevo. Así estás al tanto en tiempo real.
+        subject = f"🆕 Pedido nuevo: {pedido.get('brand_name')}"
+        text = f"""Llegó un cliente nuevo al onboarding.
+
+ID: {state}
+Cliente: {pedido.get('brand_name')}
+Tipo: {pedido.get('preset')}
+Email: {pedido.get('admin_email')}
+Google conectada: {google_email}
+Drive folder: {pedido.get('drive_url') or '(toda la unidad)'}
+
+El sistema va a intentar deployarlo automáticamente.
+Podés ver el estado en: /admin
+"""
+        try:
+            notify_admin(subject=subject, body_text=text)
+        except Exception as e:
+            print(f"⚠️  notify_admin falló: {e}")
+
         # ── AUTO-DEPLOY ─────────────────────────────────────────────────
         # Disparar el workflow de GitHub Actions que va a deployar este cliente
-        # automáticamente. Si falla, fallback: notificar al admin para que lo
-        # haga manual.
+        # automáticamente.
         workflow_ok = trigger_github_workflow(state)
 
         if workflow_ok:
-            # Marcar como "en cola de provisionamiento"
             kv_update(f"pedido:{state}", {"status": "provisioning"})
             print(f"✅ Workflow disparado para pedido {state}")
         else:
-            # Fallback: notificar al admin
-            subject = f"🆕 Pedido nuevo (manual): {pedido.get('brand_name')}"
-            text = f"""El auto-deploy no se pudo disparar — provisionalo manual.
-
-ID: {state}
-Negocio: {pedido.get('brand_name')}
-Tipo: {pedido.get('preset')}
-Email cliente: {pedido.get('admin_email')}
-Google conectada: {google_email}
-
-Comando: python3 provision.py {state}
-"""
-            notify_admin(subject=subject, body_text=text)
+            # Workflow no se pudo disparar — marcar para retry
+            kv_update(f"pedido:{state}", {"status": "oauth_done"})
+            print(f"⚠️  Workflow no se pudo disparar — quedó en oauth_done para retry manual")
 
         # Redirigir a pantalla de éxito (el polling muestra el estado real)
         return redirect(self, f"/success.html?id={state}")
