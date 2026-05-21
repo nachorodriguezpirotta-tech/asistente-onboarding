@@ -373,11 +373,11 @@
             </div>
             <div class="count">${isDone ? '✓' : count + (count === 1 ? ' pendiente' : ' pendientes')}</div>
           </div>
-          ${!isDone ? `
-            <div class="actions">
-              <button class="btn" data-rev-task="${esc(t.id)}" data-rev-title="${esc(t.title || t.client)}">📝 Pedir un cambio</button>
-            </div>
-          ` : ''}
+          <div class="actions">
+            <button class="btn ${isDone ? 'primary' : ''}" data-rev-task="${esc(t.id)}" data-rev-title="${esc(t.title || t.client)}">
+              ${isDone ? '📝 Pedir un cambio sobre esta entrega' : '📝 Pedir un cambio'}
+            </button>
+          </div>
         </div>
       `;
     }
