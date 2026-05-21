@@ -114,6 +114,12 @@ def now_iso():
     return datetime.datetime.utcnow().isoformat() + "Z"
 
 
+def _h_scan(s):
+    """Escape para HTML."""
+    s = str(s or "")
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
 def send_mail_from_tenant(access_token: str, to: str, from_name: str, subject: str, text: str, html: str = None) -> bool:
     """Envía mail desde la cuenta Google del tenant via Gmail API."""
     if not to:
@@ -331,6 +337,7 @@ class handler(BaseHTTPRequestHandler):
                     break
 
             new_inputs = 0
+            new_input_files = []  # nombres para el mail
             for f in input_files:
                 if f["id"] in known_files:
                     continue
@@ -339,9 +346,11 @@ class handler(BaseHTTPRequestHandler):
                     continue
                 known_files.add(f["id"])
                 new_inputs += 1
+                new_input_files.append(f["name"])
 
             # ── 2. Escanear EDITADOS (carpeta output, si existe) ──
             new_outputs = 0
+            new_output_files = []  # guardamos nombres para el mail al admin
             if output_folder_id:
                 try:
                     output_files = list_files_in_folder(access_token, output_folder_id)
@@ -354,6 +363,7 @@ class handler(BaseHTTPRequestHandler):
                             continue
                         known_files.add(f["id"])
                         new_outputs += 1
+                        new_output_files.append(f["name"])
                 except Exception as e:
                     errors.append(f"{output_folder_name}: {e}")
 
@@ -407,15 +417,31 @@ class handler(BaseHTTPRequestHandler):
                 try:
                     if tenant.get("notify_on_upload") and tenant.get("admin_email"):
                         brand = tenant.get("brand_name") or "Asistente"
-                        adm_subject = f"📥 {real_client_name} subió material ({new_inputs})"
-                        adm_text = (f"{real_client_name} subió {new_inputs} archivo(s).\n"
-                                    f"Asignado a {editor_name}.\n\n— {brand}")
-                        adm_html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
-                                    f"max-width:600px;color:#222;line-height:1.6;'>"
-                                    f"<h2 style='color:#ff6b35;'>📥 {real_client_name} subió material</h2>"
-                                    f"<p><strong>{new_inputs}</strong> archivo(s) nuevo(s) → asignado a <strong>{editor_name}</strong></p>"
-                                    f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
-                                    f"</body></html>")
+                        input_link = f"https://drive.google.com/drive/folders/{folder_id}"
+                        first_file = new_input_files[0] if new_input_files else f"{new_inputs} archivos"
+                        files_text = "\n".join(f"  • {n}" for n in new_input_files) if new_input_files else f"  • {new_inputs} archivo(s)"
+                        files_html = "".join(
+                            f"<li style='margin:4px 0;color:#222;'>🎬 <strong>{_h_scan(n)}</strong></li>"
+                            for n in new_input_files
+                        )
+                        adm_subject = f"📥 {real_client_name} subió: {first_file}"
+                        adm_text = (
+                            f"{real_client_name} subió:\n\n{files_text}\n\n"
+                            f"Asignado a {editor_name}.\n"
+                            f"Carpeta de crudos: {input_link}\n\n— {brand}"
+                        )
+                        adm_html = (
+                            f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                            f"max-width:600px;color:#222;line-height:1.6;'>"
+                            f"<h2 style='color:#ff6b35;'>📥 {_h_scan(real_client_name)} subió material</h2>"
+                            + (f"<ul style='list-style:none;padding:0;margin:14px 0;background:#fef3c7;border-radius:8px;padding:14px 16px;'>{files_html}</ul>"
+                               if files_html else f"<p>{new_inputs} archivo(s) nuevo(s)</p>")
+                            + f"<p style='color:#666;font-size:13px;'>Asignado a <strong style='color:#222;'>{_h_scan(editor_name)}</strong></p>"
+                            f"<p style='margin:20px 0;'><a href='{input_link}' style='background:#ff6b35;color:white;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;'>📁 Ver crudos en Drive</a></p>"
+                            f"<hr style='border:none;border-top:1px solid #eee;margin:24px 0;'>"
+                            f"<p style='color:#888;font-size:12px;'>— {_h_scan(brand)}</p>"
+                            f"</body></html>"
+                        )
                         notify_via_tenant(tenant_id, tenant["admin_email"], adm_subject, adm_text, adm_html)
                 except Exception:
                     pass
@@ -451,16 +477,41 @@ class handler(BaseHTTPRequestHandler):
                     try:
                         if tenant.get("notify_on_task_done") and tenant.get("admin_email"):
                             brand = tenant.get("brand_name") or "Asistente"
-                            adm_subject = f"✅ {editor_name} entregó: {real_client_name}"
-                            adm_text = (f"{editor_name} terminó el pedido de {real_client_name}.\n\n"
-                                        f"Se detectó automáticamente en la carpeta de entregas.\n\n— {brand}")
-                            adm_html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
-                                        f"max-width:600px;color:#222;line-height:1.6;'>"
-                                        f"<h2 style='color:#4ade80;'>✅ {editor_name} entregó</h2>"
-                                        f"<p><strong>Cliente:</strong> {real_client_name}</p>"
-                                        f"<p style='color:#666;'>Detectado automáticamente en la carpeta de entregas.</p>"
-                                        f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
-                                        f"</body></html>")
+                            output_link = f"https://drive.google.com/drive/folders/{output_folder_id}" if output_folder_id else ""
+
+                            # Armar listado de archivos (puede haber 1 o varios)
+                            files_text = ""
+                            files_html = ""
+                            if new_output_files:
+                                files_text = "\n".join(f"  • {n}" for n in new_output_files)
+                                files_html = "".join(
+                                    f"<li style='margin:4px 0;color:#222;'>🎬 <strong>{_h_scan(n)}</strong></li>"
+                                    for n in new_output_files
+                                )
+
+                            # Subject usa el primer archivo si hay; si no, cae al cliente
+                            first_file = new_output_files[0] if new_output_files else real_client_name
+                            adm_subject = f"✅ {editor_name} entregó: {first_file}"
+
+                            adm_text = (
+                                f"{editor_name} terminó:\n\n{files_text or '  • ' + real_client_name}\n\n"
+                                f"Cliente: {real_client_name}\n"
+                                + (f"Carpeta de entregas: {output_link}\n" if output_link else "")
+                                + f"\n— {brand}"
+                            )
+                            adm_html = (
+                                f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                                f"max-width:600px;color:#222;line-height:1.6;'>"
+                                f"<h2 style='color:#4ade80;'>✅ {_h_scan(editor_name)} entregó</h2>"
+                                + (f"<ul style='list-style:none;padding:0;margin:14px 0;background:#f3f4f6;border-radius:8px;padding:14px 16px;'>{files_html}</ul>"
+                                   if files_html else f"<p>{_h_scan(real_client_name)}</p>")
+                                + f"<p style='color:#666;font-size:13px;'>Cliente: <strong style='color:#222;'>{_h_scan(real_client_name)}</strong></p>"
+                                + (f"<p style='margin:20px 0;'><a href='{output_link}' style='background:#4ade80;color:white;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;'>📁 Ver entrega en Drive</a></p>"
+                                   if output_link else "")
+                                + f"<hr style='border:none;border-top:1px solid #eee;margin:24px 0;'>"
+                                f"<p style='color:#888;font-size:12px;'>— {_h_scan(brand)}</p>"
+                                f"</body></html>"
+                            )
                             notify_via_tenant(tenant_id, tenant["admin_email"], adm_subject, adm_text, adm_html)
                     except Exception:
                         pass
