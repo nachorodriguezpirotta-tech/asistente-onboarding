@@ -497,6 +497,9 @@
                     </div>
                 </div>
                 <p class="hint">Cuando un cliente entra a su portal y pide un cambio, aparece acá. La tarea se marca como urgente automáticamente y le llega mail al editor.</p>
+                <div style="margin-bottom:12px;">
+                    <button class="action-btn-main" id="add-rev-manual-btn">+ Agregar revisión manual</button>
+                </div>
                 <div id="revisions-list"></div>
             </div>
         </div>
@@ -622,8 +625,12 @@
                     </label>
                 </div>
 
-                <button class="action-btn-main" id="save-notifs-btn" style="margin-top: 14px;">💾 Guardar notificaciones</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+                    <button class="action-btn-main" id="save-notifs-btn">💾 Guardar notificaciones</button>
+                    <button class="action-link" id="test-mail-btn" title="Mandate un mail simulando una entrega real para probar el flujo">🧪 Mandarme mail de prueba</button>
+                </div>
                 <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">Los mails salen desde tu cuenta de Google conectada (gmail.com / Workspace).</p>
+                <div id="test-mail-result" style="margin-top: 10px;"></div>
             </div>
 
             <div class="settings-block">
@@ -740,6 +747,7 @@
         const chatUrl = () => `/api/chat?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const digestUrl = () => `/api/weekly_digest?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const revisionsUrl = (extra = '') => `/api/revisions?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
+        const testMailUrl = () => `/api/test_mail?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
 
         async function loadAll() {
             try {
@@ -2057,6 +2065,88 @@
                 REV_FILTER = btn.dataset.status;
                 loadRevisions();
             };
+        });
+
+        // Modal: agregar revisión manualmente desde dashboard
+        function openAddRevisionDialog() {
+            const tasks = (STATE.tasks || []).filter(t => t.client || t.title);
+            if (tasks.length === 0) {
+                toast('No hay tareas para asignarle una revisión', true);
+                return;
+            }
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-bg';
+            overlay.innerHTML = `
+              <div class="modal">
+                <h3>+ Revisión manual</h3>
+                <p style="color:var(--text-dim);font-size:12px;margin-bottom:14px;">
+                  Cargá una revisión a una tarea sin esperar a que el cliente la pida desde el portal.
+                  La tarea se marca urgente, se reabre si estaba cerrada, y se le manda mail al editor.
+                </p>
+                <label>Tarea</label>
+                <select id="rev-task-sel">
+                  ${tasks.map(t => `<option value="${attrEscape(t.id)}">${escapeHtml((t.client || t.title) + (t.assignee ? ' · ' + t.assignee : '') + (t.status === 'done' ? ' (entregada)' : ''))}</option>`).join('')}
+                </select>
+                <label>Cliente (opcional, si no lo pongo uso el de la tarea)</label>
+                <input id="rev-client-input" placeholder="Nombre del cliente">
+                <label>Pedido de cambio</label>
+                <textarea id="rev-msg" placeholder="Qué hay que cambiar (cortar el segundo 12, cambiar la música, etc.)" style="min-height:100px;"></textarea>
+                <div class="modal-actions">
+                  <button data-action="cancel">Cancelar</button>
+                  <button class="primary" data-action="save">Crear revisión</button>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(overlay);
+            const close = () => overlay.remove();
+            overlay.querySelector('[data-action="cancel"]').onclick = close;
+            overlay.onclick = (e) => { if (e.target === overlay) close(); };
+            overlay.querySelector('[data-action="save"]').onclick = async () => {
+                const task_id = overlay.querySelector('#rev-task-sel').value;
+                const message = overlay.querySelector('#rev-msg').value.trim();
+                const client_name = overlay.querySelector('#rev-client-input').value.trim();
+                if (!message) { toast('Falta el mensaje', true); return; }
+                try {
+                    await api('POST', revisionsUrl(), { task_id, message, client_name });
+                    close();
+                    REV_FILTER = 'open';
+                    document.querySelectorAll('.rev-filter').forEach(x => x.classList.toggle('active', x.dataset.status === 'open'));
+                    loadRevisions();
+                    refreshRevisionBadge();
+                    loadAll(); // refrescar tasks para reflejar urgente + reapertura
+                    toast('✓ Revisión creada');
+                } catch (e) { toast(e.message, true); }
+            };
+            overlay.querySelector('#rev-msg').focus();
+        }
+        document.getElementById('add-rev-manual-btn')?.addEventListener('click', openAddRevisionDialog);
+
+        // Mail de prueba: simula el mail real al cliente y te lo manda a vos para probar
+        document.getElementById('test-mail-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('test-mail-btn');
+            const out = document.getElementById('test-mail-result');
+            const adminEmail = document.getElementById('set-admin-email').value.trim();
+            if (!adminEmail) {
+                out.innerHTML = '<div style="color:var(--red);font-size:13px;">Poné tu email arriba primero y guardá.</div>';
+                return;
+            }
+            btn.disabled = true; btn.textContent = '📨 Enviando…';
+            out.innerHTML = '<div style="color:var(--text-dim);font-size:13px;">⏳ Mandando mail…</div>';
+            try {
+                const r = await api('POST', testMailUrl(), {});
+                out.innerHTML = `
+                    <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);padding:10px 14px;border-radius:8px;font-size:13px;color:var(--green);">
+                        ✅ Mail enviado a <strong>${escapeHtml(r.sent_to)}</strong>. Revisá tu inbox (puede tardar un toque).
+                        <br><br>
+                        <span style="color:var(--text-dim);">Link del portal que recibís en el mail:</span>
+                        <br><a href="${attrEscape(r.portal_link)}" target="_blank" style="color:var(--accent);font-size:12px;word-break:break-all;">${escapeHtml(r.portal_link)}</a>
+                    </div>
+                `;
+            } catch (e) {
+                out.innerHTML = `<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);padding:10px 14px;border-radius:8px;font-size:13px;color:var(--red);">❌ ${escapeHtml(e.message)}</div>`;
+            } finally {
+                btn.disabled = false; btn.textContent = '🧪 Mandarme mail de prueba';
+            }
         });
 
         // ═══════════════════════════════════════════════════════════════
