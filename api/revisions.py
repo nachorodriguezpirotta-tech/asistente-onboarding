@@ -202,10 +202,16 @@ class handler(BaseHTTPRequestHandler):
                     task_title = (task or {}).get("title") or (task or {}).get("client") or "—"
 
                     subject = f"✅ Revisión resuelta — {cli}"
+                    resnote_text = ("Nota de resolución: " + resnote) if resnote else ""
                     text = (f"La revisión de {cli} sobre '{task_title}' quedó resuelta.\n\n"
                             f"Pedido original: {msg}\n"
-                            f"{'Nota de resolución: ' + resnote if resnote else ''}\n\n"
+                            f"{resnote_text}\n\n"
                             f"Editor: {editor}\n\n— {brand}")
+                    resnote_html = ""
+                    if resnote:
+                        resnote_html = ("<div style='background:rgba(74,222,128,0.1);border-left:3px solid #4ade80;"
+                                        "padding:10px 14px;border-radius:6px;margin:10px 0;color:#000;font-size:13px;'>"
+                                        f"<strong>Resolución:</strong><br>{resnote}</div>")
                     html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
                             f"max-width:600px;color:#222;line-height:1.6;'>"
                             f"<h2 style='color:#4ade80;'>✅ Revisión resuelta</h2>"
@@ -213,7 +219,7 @@ class handler(BaseHTTPRequestHandler):
                             f"<div style='background:#f3f4f6;border-left:3px solid #888;padding:10px 14px;"
                             f"border-radius:6px;margin:10px 0;color:#000;font-size:13px;'>"
                             f"<strong>Pedido original:</strong><br>{msg}</div>"
-                            f"{'<div style=\"background:rgba(74,222,128,0.1);border-left:3px solid #4ade80;padding:10px 14px;border-radius:6px;margin:10px 0;color:#000;font-size:13px;\"><strong>Resolución:</strong><br>' + resnote + '</div>' if resnote else ''}"
+                            f"{resnote_html}"
                             f"<p>Editor: <strong>{editor}</strong></p>"
                             f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
                             f"</body></html>")
