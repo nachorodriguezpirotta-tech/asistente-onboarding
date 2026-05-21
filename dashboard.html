@@ -418,6 +418,36 @@
         .rev-card .rev-task-link:hover { text-decoration: underline; }
 
         .rev-filter.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Folder boxes (vincular crudos/editados) */
+        .folder-boxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 700px) {
+            .folder-boxes { grid-template-columns: 1fr; }
+        }
+        .folder-box {
+            background: var(--bg-card-2);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color .15s, background .15s;
+        }
+        .folder-box-input { border-color: rgba(255, 107, 53, 0.3); }
+        .folder-box-input:focus-within { border-color: var(--accent); background: rgba(255, 107, 53, 0.04); }
+        .folder-box-output { border-color: rgba(74, 222, 128, 0.3); }
+        .folder-box-output:focus-within { border-color: var(--green); background: rgba(74, 222, 128, 0.04); }
+        .folder-box-header { display: flex; align-items: center; gap: 12px; }
+        .folder-box-emoji { font-size: 28px; line-height: 1; }
+        .folder-box-title { font-weight: 800; color: var(--text); font-size: 14px; letter-spacing: 0.02em; }
+        .folder-box-input .folder-box-title { color: var(--accent); }
+        .folder-box-output .folder-box-title { color: var(--green); }
+        .folder-box-sub { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+        .folder-box.verified { background: rgba(74, 222, 128, 0.06); }
+        .folder-box.verified.folder-box-input { background: rgba(255, 107, 53, 0.06); }
     </style>
 </head>
 <body>
@@ -536,42 +566,57 @@
                 <div id="scan-result" style="margin-top: 10px;"></div>
 
                 <div id="folder-picker" style="display:none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
-                    <label style="color: var(--text); font-size: 13px; margin-bottom: 6px; display: block;">📎 Pegá el link de la carpeta de Drive</label>
-                    <p style="color: var(--text-dim); font-size: 12px; margin-bottom: 8px;">
-                        En Google Drive: click derecho en la carpeta → <strong style="color: var(--text);">Compartir → Copiar link</strong>.
-                        O abrí la carpeta y copiá la URL de la barra de direcciones.
+
+                    <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">
+                        💡 <strong style="color:var(--text);">Cómo funciona:</strong> el cliente sube material a la <strong style="color:var(--accent);">carpeta de Crudos</strong> → el sistema avisa al editor. El editor sube terminado a la <strong style="color:var(--green);">carpeta de Editados</strong> → el contador baja solo. Cuando llega a 0, la tarea se cierra automática.
                     </p>
-                    <div style="display: flex; gap: 6px;">
-                        <input id="folder-link-input" placeholder="https://drive.google.com/drive/folders/..." style="flex: 1; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; font-family: inherit;">
-                        <button class="action-btn-main" id="check-folder-btn" style="padding: 10px 14px;">Verificar</button>
-                    </div>
-                    <div id="folder-check-result" style="margin-top: 10px;"></div>
 
-                    <div id="folder-picker-step2" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
-                        <label style="color: var(--text); font-size: 13px; display: block; margin-bottom: 6px;">Asignar al editor:</label>
-                        <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
+                    <div class="folder-boxes">
+                        <!-- Caja CRUDOS -->
+                        <div class="folder-box folder-box-input">
+                            <div class="folder-box-header">
+                                <span class="folder-box-emoji">📥</span>
+                                <div>
+                                    <div class="folder-box-title">Carpeta de CRUDOS</div>
+                                    <div class="folder-box-sub">Donde el cliente sube material</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px; margin-top: 10px;">
+                                <input id="folder-link-input" placeholder="Pegá el link de Drive" style="flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; font-family: inherit;">
+                                <button class="action-btn-main" id="check-folder-btn" style="padding: 10px 14px;">Verificar</button>
+                            </div>
+                            <div id="folder-check-result" style="margin-top: 8px;"></div>
+                        </div>
 
-                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                            <label style="color: var(--text); font-size: 13px; display: block; margin-bottom: 4px;">📤 Carpeta de ENTREGAS <span style="color: var(--text-dim); font-weight: 400;">(opcional)</span></label>
-                            <p style="color: var(--text-dim); font-size: 12px; margin-bottom: 6px;">
-                                Si tu equipo sube los archivos terminados a OTRA carpeta de Drive, pegá su link acá.
-                                Cuando aparezca un editado, el pendiente baja automáticamente. Cuando llega a 0, se cierra solo.
-                            </p>
-                            <div style="display: flex; gap: 6px;">
-                                <input id="output-folder-link" placeholder="Link de la carpeta de editados (opcional)" style="flex: 1; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit;">
-                                <button class="action-link" id="check-output-btn" style="padding: 8px 12px; font-size: 13px;">Verificar</button>
+                        <!-- Caja EDITADOS -->
+                        <div class="folder-box folder-box-output">
+                            <div class="folder-box-header">
+                                <span class="folder-box-emoji">📤</span>
+                                <div>
+                                    <div class="folder-box-title">Carpeta de EDITADOS</div>
+                                    <div class="folder-box-sub">Donde el equipo entrega los terminados</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px; margin-top: 10px;">
+                                <input id="output-folder-link" placeholder="Pegá el link de Drive" style="flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 13px; font-family: inherit;">
+                                <button class="action-btn-main" id="check-output-btn" style="padding: 10px 14px; background: var(--green); border-color: var(--green);">Verificar</button>
                             </div>
                             <div id="output-check-result" style="margin-top: 8px;"></div>
                         </div>
+                    </div>
+
+                    <div id="folder-picker-step2" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+                        <label style="color: var(--text); font-size: 13px; display: block; margin-bottom: 6px;">👤 Editor responsable:</label>
+                        <select id="assign-editor" style="width:100%; background:var(--bg-card-2); border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit;"></select>
 
                         <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="action-btn-main" id="confirm-assignment-btn">Vincular carpeta</button>
+                            <button class="action-btn-main" id="confirm-assignment-btn">🔗 Vincular</button>
                             <button class="action-link" id="cancel-assignment-btn">Cancelar</button>
                         </div>
                     </div>
 
                     <details style="margin-top: 16px;">
-                        <summary style="color: var(--text-dim); font-size: 12px; cursor: pointer;">¿Preferís navegar tus carpetas de Drive en vez de pegar el link?</summary>
+                        <summary style="color: var(--text-dim); font-size: 12px; cursor: pointer;">¿No tenés el link? Navegá tu Drive acá</summary>
                         <div style="margin-top: 10px;">
                             <div style="display: flex; gap: 4px; margin-bottom: 8px; font-size: 12px; color: var(--text-dim);">
                                 <span id="folder-breadcrumb">Mi Unidad</span>
@@ -1596,7 +1641,15 @@
         document.getElementById('cancel-assignment-btn').onclick = () => {
             document.getElementById('folder-picker').style.display = 'none';
             document.getElementById('add-assignment-btn').style.display = '';
+            document.getElementById('folder-link-input').value = '';
+            document.getElementById('output-folder-link').value = '';
+            document.getElementById('folder-check-result').innerHTML = '';
+            document.getElementById('output-check-result').innerHTML = '';
+            document.getElementById('folder-picker-step2').style.display = 'none';
+            document.querySelector('.folder-box-input')?.classList.remove('verified');
+            document.querySelector('.folder-box-output')?.classList.remove('verified');
             SELECTED_FOLDER = null;
+            SELECTED_OUTPUT_FOLDER = null;
         };
 
         // ── VERIFICAR link de carpeta pegado ──
@@ -1604,29 +1657,26 @@
             const input = document.getElementById('folder-link-input').value.trim();
             const result = document.getElementById('folder-check-result');
             const step2 = document.getElementById('folder-picker-step2');
-            if (!input) { result.innerHTML = '<div style="color: var(--red); font-size: 13px;">Pegá un link de Drive</div>'; return; }
+            const box = document.querySelector('.folder-box-input');
+            if (!input) { result.innerHTML = '<div style="color: var(--red); font-size: 12px;">Pegá un link de Drive</div>'; return; }
 
-            result.innerHTML = '<div style="color: var(--text-dim); font-size: 13px;">⏳ Verificando carpeta…</div>';
+            result.innerHTML = '<div style="color: var(--text-dim); font-size: 12px;">⏳ Verificando…</div>';
             step2.style.display = 'none';
             try {
                 const info = await api('GET', driveFolderInfoUrl(input));
                 SELECTED_FOLDER = { id: info.id, name: info.name };
-                result.innerHTML = `
-                    <div style="background: rgba(76, 222, 128, 0.1); border: 1px solid rgba(76, 222, 128, 0.3); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 20px;">✅</span>
-                        <div>
-                            <div style="color: var(--green); font-weight: 600; font-size: 13px;">Carpeta encontrada</div>
-                            <div style="color: var(--text); font-size: 14px; font-weight: 600;">📁 ${escapeHtml(info.name)}</div>
-                        </div>
-                    </div>
-                `;
+                result.innerHTML = `<div style="color: var(--accent); font-size: 12px; font-weight: 600;">✅ ${escapeHtml(info.name)}</div>`;
+                box?.classList.add('verified');
                 step2.style.display = 'block';
                 // Llenar select de editores
                 const sel = document.getElementById('assign-editor');
                 sel.innerHTML = STATE.editors.map(e => `<option value="${attrEscape(e.id)}" data-name="${attrEscape(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+                // Scroll suave al step2 para que se vea el select
+                setTimeout(() => step2.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
             } catch (e) {
-                result.innerHTML = `<div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); padding: 10px 12px; border-radius: 8px; color: var(--red); font-size: 13px;">❌ ${escapeHtml(e.message)}</div>`;
+                result.innerHTML = `<div style="color: var(--red); font-size: 12px;">❌ ${escapeHtml(e.message)}</div>`;
                 SELECTED_FOLDER = null;
+                box?.classList.remove('verified');
             }
         };
         // Enter en el input también verifica
@@ -1638,15 +1688,18 @@
         document.getElementById('check-output-btn').onclick = async () => {
             const input = document.getElementById('output-folder-link').value.trim();
             const result = document.getElementById('output-check-result');
-            if (!input) { SELECTED_OUTPUT_FOLDER = null; result.innerHTML = ''; return; }
+            const box = document.querySelector('.folder-box-output');
+            if (!input) { SELECTED_OUTPUT_FOLDER = null; result.innerHTML = ''; box?.classList.remove('verified'); return; }
             result.innerHTML = '<div style="color: var(--text-dim); font-size: 12px;">⏳ Verificando…</div>';
             try {
                 const info = await api('GET', driveFolderInfoUrl(input));
                 SELECTED_OUTPUT_FOLDER = { id: info.id, name: info.name };
-                result.innerHTML = `<div style="color: var(--green); font-size: 12px;">✅ 📁 ${escapeHtml(info.name)}</div>`;
+                result.innerHTML = `<div style="color: var(--green); font-size: 12px; font-weight: 600;">✅ ${escapeHtml(info.name)}</div>`;
+                box?.classList.add('verified');
             } catch (e) {
                 result.innerHTML = `<div style="color: var(--red); font-size: 12px;">❌ ${escapeHtml(e.message)}</div>`;
                 SELECTED_OUTPUT_FOLDER = null;
+                box?.classList.remove('verified');
             }
         };
         document.getElementById('output-folder-link').onkeydown = (e) => {
@@ -1683,15 +1736,24 @@
             }
 
             try {
+                const hadOutput = !!SELECTED_OUTPUT_FOLDER;
+                const folderName = SELECTED_FOLDER.name;
                 await api('POST', assignmentsUrl(), payload);
                 ASSIGNMENTS = (await api('GET', assignmentsUrl())).assignments || [];
                 renderAssignments();
+                // Limpiar todo
                 document.getElementById('folder-picker').style.display = 'none';
                 document.getElementById('add-assignment-btn').style.display = '';
-                SELECTED_OUTPUT_FOLDER = null;
+                document.getElementById('folder-link-input').value = '';
                 document.getElementById('output-folder-link').value = '';
+                document.getElementById('folder-check-result').innerHTML = '';
                 document.getElementById('output-check-result').innerHTML = '';
-                toast(`Vinculado: ${SELECTED_FOLDER.name} → ${editor_name}${SELECTED_OUTPUT_FOLDER ? ' (+ entregas)' : ''}`);
+                document.getElementById('folder-picker-step2').style.display = 'none';
+                document.querySelector('.folder-box-input')?.classList.remove('verified');
+                document.querySelector('.folder-box-output')?.classList.remove('verified');
+                SELECTED_FOLDER = null;
+                SELECTED_OUTPUT_FOLDER = null;
+                toast(`✓ Vinculado: ${folderName} → ${editor_name}${hadOutput ? ' (+ entregas)' : ''}`);
             } catch (e) { toast(e.message, true); }
         };
 
