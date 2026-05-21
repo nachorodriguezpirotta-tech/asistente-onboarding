@@ -45,35 +45,22 @@ class handler(BaseHTTPRequestHandler):
 
         brand_name = (data.get("brand_name") or "").strip()
         admin_email = (data.get("admin_email") or "").strip().lower()
-        preset = (data.get("preset") or "").strip()
 
         # Validaciones
-        if not brand_name or not admin_email or not preset:
+        if not brand_name or not admin_email:
             return json_response(self, {"error": "Faltan campos"}, 400)
         if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", admin_email):
             return json_response(self, {"error": "Email inválido"}, 400)
-        if preset not in VALID_PRESETS:
-            return json_response(self, {"error": "Tipo de negocio inválido"}, 400)
 
-        # Si es custom, validar y armar los campos extras
-        custom_fields = {}
-        if preset == "custom":
-            for fld in ("custom_description", "custom_input", "custom_output", "custom_assignee"):
-                val = (data.get(fld) or "").strip()
-                if not val:
-                    return json_response(self, {"error": f"Falta {fld}"}, 400)
-                custom_fields[fld] = val
-
-        # Crear pedido en KV (sin drive folder — el cliente la va a vincular después en el dashboard)
+        # Crear pedido en KV (sin preset, sin drive folder — todo se configura después)
         pedido_id = new_pedido_id()
         kv_set(f"pedido:{pedido_id}", {
             "id": pedido_id,
             "status": "pending_oauth",
             "brand_name": brand_name,
             "admin_email": admin_email,
-            "preset": preset,
+            "preset": "video_edit",  # default, no afecta funcionalidad
             "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-            **custom_fields,
         })
 
         # URL para iniciar OAuth

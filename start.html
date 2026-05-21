@@ -133,33 +133,9 @@
       <div class="hint">Va a aparecer en los mails y el dashboard</div>
       <input type="text" id="brand_name" placeholder="Ej: Lente Pro Estudio" required>
 
-      <label>Tu email (admin)</label>
-      <div class="hint">Te llega el link de tu sistema cuando esté listo</div>
+      <label>Tu email</label>
+      <div class="hint">El que vas a usar para administrar el sistema</div>
       <input type="email" id="admin_email" placeholder="tu@email.com" required>
-
-      <label>Tipo de negocio</label>
-      <div class="hint">Esto determina el vocabulario del sistema</div>
-      <div class="preset-grid" id="presets"></div>
-      <input type="hidden" id="preset" value="">
-
-      <!-- Campos extra cuando elige "Otros" -->
-      <div id="custom-fields" style="display: none; margin-top: 16px; padding: 16px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px;">
-        <label style="margin-top: 0;">Describí tu negocio brevemente</label>
-        <div class="hint">Ej: "Estudio de animación 2D" o "Agencia de transcripciones"</div>
-        <input type="text" id="custom_description" placeholder="A qué se dedica tu negocio">
-
-        <label>¿Qué cosa entra al sistema? (singular)</label>
-        <div class="hint">El "input" que detecta el sistema. Ej: guion, audio, pedido, ticket</div>
-        <input type="text" id="custom_input" placeholder="archivo">
-
-        <label>¿Qué cosa entrega tu equipo? (singular)</label>
-        <div class="hint">El "output" que cierra cada tarea. Ej: animación, transcripción, presupuesto</div>
-        <input type="text" id="custom_output" placeholder="entrega">
-
-        <label>¿Cómo se llama el responsable que hace el trabajo?</label>
-        <div class="hint">Singular. Ej: animador, transcriptor, vendedor, técnico</div>
-        <input type="text" id="custom_assignee" placeholder="responsable">
-      </div>
 
       <div id="error1"></div>
 
@@ -171,46 +147,18 @@
     <div class="card step-2" id="step-2">
       <div style="text-align: center;">
         <div class="icon">🎉</div>
-        <h2>Listo, así se va a ver tu dashboard</h2>
-        <p style="color:#888; font-size:14px;">Personalizado con tu nombre y tu vocabulario.</p>
-      </div>
-
-      <!-- Preview "mockup" del dashboard del cliente -->
-      <div style="background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; margin: 16px 0; font-family: -apple-system, sans-serif;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; border-bottom: 1px solid #1a1a1a; margin-bottom:12px;">
-          <div>
-            <div style="color:#fff; font-weight:700; font-size:16px;" id="preview-brand">Tu Negocio</div>
-            <div style="color:#888; font-size:12px;" id="preview-subtitle">Vista global</div>
-          </div>
-          <div style="color:#666; font-size:11px;">PWA</div>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom:12px;">
-          <div style="background:#141414; padding:10px; border-radius:6px;">
-            <div style="color:#888; font-size:10px; text-transform:uppercase;" id="preview-input-label">Inputs pendientes</div>
-            <div style="color:#ff6b35; font-size:22px; font-weight:700;">12</div>
-          </div>
-          <div style="background:#141414; padding:10px; border-radius:6px;">
-            <div style="color:#888; font-size:10px; text-transform:uppercase;" id="preview-output-label">Entregados (mes)</div>
-            <div style="color:#4caf50; font-size:22px; font-weight:700;">47</div>
-          </div>
-        </div>
-        <div style="background:#141414; padding:10px; border-radius:6px;">
-          <div style="color:#888; font-size:10px; text-transform:uppercase; margin-bottom:6px;" id="preview-assignee-label">Responsables</div>
-          <div style="color:#d0d0d0; font-size:12px;">👤 Juan — 5 pendientes</div>
-          <div style="color:#d0d0d0; font-size:12px;">👤 María — 3 pendientes</div>
-          <div style="color:#d0d0d0; font-size:12px;">👤 Pedro — 4 pendientes</div>
-        </div>
+        <h2 id="preview-brand">Tu Negocio</h2>
+        <p style="color:#888; font-size:14px; margin-top: 6px;">Listo. Ahora conectá tu Google y al toque tenés tu dashboard.</p>
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
-        <p style="font-size: 15px; color:#d0d0d0; margin-bottom: 8px;">Para activarlo, dale 1 click a:</p>
         <a id="google-btn" href="#" class="google-btn">
           <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
           Conectar con Google
         </a>
         <div style="font-size: 12px; color: #666; margin-top: 16px; line-height: 1.5;">
-          Pediremos: <strong style="color:#999">leer tu Drive · leer tu Sheet · mandar mails</strong><br>
-          Podés revocar permisos cuando quieras desde tu cuenta de Google.
+          Pediremos: <strong style="color:#999">leer tu Drive · mandar mails desde tu cuenta</strong><br>
+          Podés revocar el acceso cuando quieras desde tu cuenta de Google.
         </div>
       </div>
       <a href="#" class="back" id="back-to-1">← Editar datos</a>
@@ -218,33 +166,6 @@
   </div>
 
   <script>
-    const PRESETS = [
-      { id: 'video_edit',       emoji: '🎬', name: 'Edición video' },
-      { id: 'photo_studio',     emoji: '📸', name: 'Fotografía' },
-      { id: 'design_agency',    emoji: '🎨', name: 'Diseño' },
-      { id: 'ugc',              emoji: '📱', name: 'UGC / Content' },
-      { id: 'music_production', emoji: '🎤', name: 'Producción musical' },
-      { id: 'events',           emoji: '🎉', name: 'Eventos' },
-      { id: 'coaching',         emoji: '🎙️', name: 'Coaching / Cursos' },
-      { id: 'custom',           emoji: '✨', name: 'Otra agencia' },
-    ];
-
-    // Render presets
-    const presetsEl = document.getElementById('presets');
-    PRESETS.forEach(p => {
-      const div = document.createElement('div');
-      div.className = 'preset';
-      div.dataset.id = p.id;
-      div.innerHTML = `<div class="emoji">${p.emoji}</div><div class="name">${p.name}</div>`;
-      div.onclick = () => {
-        document.querySelectorAll('.preset').forEach(el => el.classList.remove('selected'));
-        div.classList.add('selected');
-        document.getElementById('preset').value = p.id;
-        document.getElementById('custom-fields').style.display = (p.id === 'custom') ? 'block' : 'none';
-      };
-      presetsEl.appendChild(div);
-    });
-
     // Track wizard_start
     try {
       fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'},
@@ -272,29 +193,14 @@
       const data = {
         brand_name: document.getElementById('brand_name').value.trim(),
         admin_email: document.getElementById('admin_email').value.trim(),
-        preset: document.getElementById('preset').value,
       };
-
-      // Si eligió "custom", agregar los campos custom
-      if (data.preset === 'custom') {
-        data.custom_description = document.getElementById('custom_description').value.trim();
-        data.custom_input = document.getElementById('custom_input').value.trim();
-        data.custom_output = document.getElementById('custom_output').value.trim();
-        data.custom_assignee = document.getElementById('custom_assignee').value.trim();
-      }
 
       const err = document.getElementById('error1');
       err.innerHTML = '';
 
-      if (!data.brand_name || !data.admin_email || !data.preset) {
-        err.innerHTML = '<div class="error">Completá todos los campos y elegí un tipo de negocio.</div>';
+      if (!data.brand_name || !data.admin_email) {
+        err.innerHTML = '<div class="error">Completá nombre y email.</div>';
         return;
-      }
-      if (data.preset === 'custom') {
-        if (!data.custom_description || !data.custom_input || !data.custom_output || !data.custom_assignee) {
-          err.innerHTML = '<div class="error">Completá los 4 campos del negocio custom.</div>';
-          return;
-        }
       }
       if (!/^[^@]+@[^@]+\.[^@]+$/.test(data.admin_email)) {
         err.innerHTML = '<div class="error">Email inválido.</div>';
@@ -314,27 +220,8 @@
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'Error');
 
-        // Llenar el PREVIEW del dashboard con el vocabulario del cliente
-        const presetVocab = {
-          video_edit:       { input: 'crudos', output: 'editados', assignees: 'editores' },
-          photo_studio:     { input: 'shoots', output: 'fotos retocadas', assignees: 'retocadores' },
-          design_agency:    { input: 'briefs', output: 'diseños', assignees: 'diseñadores' },
-          ugc:              { input: 'materiales', output: 'edits', assignees: 'editores' },
-          music_production: { input: 'demos', output: 'mezclas', assignees: 'productores' },
-          events:           { input: 'briefs', output: 'eventos producidos', assignees: 'productores' },
-          coaching:         { input: 'sesiones', output: 'grabaciones procesadas', assignees: 'coaches' },
-          custom:           {
-            input: (data.custom_input || 'archivos') + (data.custom_input?.endsWith('s') ? '' : 's'),
-            output: (data.custom_output || 'entregas') + (data.custom_output?.endsWith('s') ? '' : 's'),
-            assignees: (data.custom_assignee || 'responsables') + (data.custom_assignee?.endsWith('s') ? '' : 'es')
-          },
-        };
-        const vocab = presetVocab[data.preset] || presetVocab.custom;
+        // Llenar preview con nombre
         document.getElementById('preview-brand').textContent = data.brand_name;
-        document.getElementById('preview-subtitle').textContent = 'Vista global — ' + vocab.assignees;
-        document.getElementById('preview-input-label').textContent = vocab.input.charAt(0).toUpperCase() + vocab.input.slice(1) + ' pendientes';
-        document.getElementById('preview-output-label').textContent = vocab.output.charAt(0).toUpperCase() + vocab.output.slice(1) + ' (mes)';
-        document.getElementById('preview-assignee-label').textContent = vocab.assignees;
 
         // Redirigir a Google OAuth
         document.getElementById('google-btn').href = j.oauth_url;
