@@ -748,6 +748,7 @@
         const digestUrl = () => `/api/weekly_digest?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const revisionsUrl = (extra = '') => `/api/revisions?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
         const testMailUrl = () => `/api/test_mail?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
+        const remindEditorUrl = () => `/api/remind_editor?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
 
         async function loadAll() {
             try {
@@ -847,7 +848,12 @@
                                 <span class="count">${editorTasks.length} · ${totalCount} ${STATE.profile.output_plural || 'items'}</span>
                                 ${onVac ? '<span class="vacation-badge">🌴 vacaciones</span>' : ''}
                             </span>
-                            ${!IS_EDITOR_MODE ? `<button class="add-mini" data-editor="${attrEscape(e.name)}" data-action="add-to-editor" title="Agregar cliente">+</button>` : ''}
+                            ${!IS_EDITOR_MODE ? `
+                              <div style="display:flex;gap:6px;align-items:center;">
+                                <button class="add-mini" data-editor="${attrEscape(e.name)}" data-action="remind-editor" title="Mandarle mail con sus pendientes ahora" style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:13px;">📧</button>
+                                <button class="add-mini" data-editor="${attrEscape(e.name)}" data-action="add-to-editor" title="Agregar cliente">+</button>
+                              </div>
+                            ` : ''}
                         </h2>
                         <div class="clientes-list">
                             ${editorTasks.map(t => {
@@ -921,6 +927,18 @@
                     }
                     else if (action === 'add-to-editor') {
                         openAddTaskDialog(editorName);
+                    }
+                    else if (action === 'remind-editor') {
+                        const editorObj = STATE.editors.find(x => x.name === editorName);
+                        if (!editorObj?.email) {
+                            toast(`${editorName} no tiene email configurado`, true);
+                            return;
+                        }
+                        if (!confirm(`Mandarle a ${editorName} (${editorObj.email}) un mail con sus pendientes?`)) return;
+                        try {
+                            const r = await api('POST', remindEditorUrl(), { editor_name: editorName });
+                            toast(r.sent ? `✓ Mail enviado a ${editorName}` : `⚠️ ${r.reason || 'no se pudo enviar'}`, !r.sent);
+                        } catch (e) { toast(e.message, true); }
                     }
                 };
             });
@@ -1215,11 +1233,12 @@
             // Editores
             const list = document.getElementById('config-editors-list');
             list.innerHTML = STATE.editors.map(e => `
-                <div data-editor-row="${e.id}" style="display: grid; grid-template-columns: 1fr 1.4fr auto auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <div data-editor-row="${e.id}" style="display: grid; grid-template-columns: 1fr 1.4fr auto auto auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
                     <input value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
                     <input value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email" placeholder="email (opcional)" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
                     <button data-id="${e.id}" data-action="save-editor" style="background: var(--accent); border: 1px solid var(--accent); color: white; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; opacity: 0.5;" disabled>💾</button>
-                    <button data-id="${e.id}" data-action="toggle-vacation" style="background: ${e.on_vacation ? 'rgba(251, 191, 36, 0.15)' : 'transparent'}; border: 1px solid var(--border); color: ${e.on_vacation ? 'var(--yellow)' : 'var(--text-dim)'}; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;">🌴</button>
+                    <button data-id="${e.id}" data-action="toggle-daily" title="${e.daily_reminder ? 'Recibe resumen diario de pendientes (8 AM)' : 'Activar resumen diario por mail'}" style="background: ${e.daily_reminder ? 'rgba(74, 222, 128, 0.15)' : 'transparent'}; border: 1px solid var(--border); color: ${e.daily_reminder ? 'var(--green)' : 'var(--text-dim)'}; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;">📨</button>
+                    <button data-id="${e.id}" data-action="toggle-vacation" title="${e.on_vacation ? 'En vacaciones' : 'Marcar vacaciones'}" style="background: ${e.on_vacation ? 'rgba(251, 191, 36, 0.15)' : 'transparent'}; border: 1px solid var(--border); color: ${e.on_vacation ? 'var(--yellow)' : 'var(--text-dim)'}; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;">🌴</button>
                     <button data-id="${e.id}" data-action="del-editor" style="background: transparent; border: 1px solid var(--border); color: var(--red); padding: 7px 10px; border-radius: 6px; cursor: pointer; font-family: inherit;">✕</button>
                 </div>
             `).join('') || '<div class="empty">Sin editores</div>';
@@ -1259,6 +1278,14 @@
                     const e = STATE.editors.find(x => x.id === btn.dataset.id);
                     await api('PATCH', editorsUrl(), { id: btn.dataset.id, on_vacation: !e.on_vacation });
                     await loadAll();
+                };
+            });
+            list.querySelectorAll('[data-action="toggle-daily"]').forEach(btn => {
+                btn.onclick = async () => {
+                    const e = STATE.editors.find(x => x.id === btn.dataset.id);
+                    await api('PATCH', editorsUrl(), { id: btn.dataset.id, daily_reminder: !e.daily_reminder });
+                    await loadAll();
+                    toast(e.daily_reminder ? `${e.name}: resumen diario desactivado` : `${e.name}: recibirá resumen diario a las 8 AM`);
                 };
             });
             list.querySelectorAll('[data-action="del-editor"]').forEach(btn => {

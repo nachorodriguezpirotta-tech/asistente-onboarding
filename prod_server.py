@@ -78,6 +78,7 @@ API_ROUTES = {
     "/api/weekly_digest": "weekly_digest",
     "/api/revisions": "revisions",
     "/api/test_mail": "test_mail",
+    "/api/remind_editor": "remind_editor",
 }
 API_PREFIX_ROUTES = {
     "/api/tenant/": "tenant",

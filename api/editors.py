@@ -100,6 +100,8 @@ class handler(BaseHTTPRequestHandler):
                     e["active"] = bool(data["active"])
                 if "on_vacation" in data:
                     e["on_vacation"] = bool(data["on_vacation"])
+                if "daily_reminder" in data:
+                    e["daily_reminder"] = bool(data["daily_reminder"])
                 updated = e
                 break
         if not updated:

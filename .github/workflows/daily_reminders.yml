@@ -1,0 +1,75 @@
+name: Daily reminders (a editores con daily_reminder=true)
+
+# Lunes a viernes, 8 AM Argentina (UTC-3 → 11 AM UTC).
+# Recorre todos los tenants y, por cada uno, manda mail a los editores
+# que tienen daily_reminder=true con su lista de pendientes.
+
+on:
+  schedule:
+    - cron: '0 11 * * 1-5'   # lunes a viernes 11:00 UTC = 8:00 AR
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Mandar daily reminders
+        env:
+          ONBOARDING_URL: ${{ secrets.ONBOARDING_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          DASHBOARD_SECRET: ${{ secrets.DASHBOARD_SECRET }}
+        run: |
+          if [ -z "$ONBOARDING_URL" ] || [ -z "$ADMIN_TOKEN" ] || [ -z "$DASHBOARD_SECRET" ]; then
+            echo "⚠️  Faltan secrets — skip"
+            exit 0
+          fi
+
+          python3 <<'PYEOF'
+          import os, json, hmac, hashlib
+          import urllib.request, urllib.parse
+
+          URL = os.environ["ONBOARDING_URL"].rstrip("/")
+          ADMIN = os.environ["ADMIN_TOKEN"]
+          SECRET = os.environ["DASHBOARD_SECRET"]
+
+          def make_token(tid):
+              return hmac.new(SECRET.encode(), tid.encode(), hashlib.sha256).hexdigest()[:24]
+
+          # Listar tenants con OAuth
+          req = urllib.request.Request(f"{URL}/api/admin_list?t={urllib.parse.quote(ADMIN)}")
+          try:
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  data = json.load(r)
+          except Exception as e:
+              print(f"❌ admin_list failed: {e}")
+              exit(0)
+
+          pedidos = data.get("pedidos", [])
+          tenant_ids = [p["id"] for p in pedidos if p.get("has_oauth")]
+          print(f"📨 {len(tenant_ids)} tenants → recordatorios")
+
+          total_sent = 0
+          for tid in tenant_ids:
+              token = make_token(tid)
+              try:
+                  req = urllib.request.Request(
+                      f"{URL}/api/remind_editor?tenant={tid}&t={token}&all_daily=1",
+                      data=b"{}", method="POST",
+                  )
+                  req.add_header("Content-Type", "application/json")
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      resp = json.load(r)
+                  sent = sum(1 for x in resp.get("results", []) if x.get("sent"))
+                  total_sent += sent
+                  if sent > 0:
+                      print(f"  ✓ {tid}: {sent} editor(es) notificado(s)")
+              except Exception as e:
+                  print(f"  ❌ {tid}: {e}")
+
+          print(f"\n✅ {total_sent} mails enviados.")
+          PYEOF
