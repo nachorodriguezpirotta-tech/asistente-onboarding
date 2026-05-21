@@ -714,29 +714,6 @@
       </div>
     </div>
 
-    <!-- Chat IA panel -->
-    <button class="chat-toggle" id="chat-toggle" title="Preguntale a tu asistente IA" style="display:none;" aria-label="Abrir chat con asistente IA">
-        <span class="ico-main">✨</span>
-        <span class="ico-badge">IA</span>
-    </button>
-    <div class="chat-panel" id="chat-panel">
-      <div class="chat-header">
-        <strong>💬 Crudo IA</strong>
-        <button class="x" id="chat-close">×</button>
-      </div>
-      <div class="chat-messages" id="chat-messages">
-        <div class="chat-msg bot">Hola 👋 Preguntame lo que quieras sobre tu operación. Ej: "¿quién está más cargado esta semana?", "¿cuántas entregas hicimos en marzo?", "¿qué cliente nunca devuelve feedback?".</div>
-      </div>
-      <div class="chat-suggestions" id="chat-suggestions">
-        <button class="chip" data-q="¿Quién está más cargado esta semana?">¿Quién está más cargado?</button>
-        <button class="chip" data-q="¿Cuáles son los pendientes más viejos?">Pendientes más viejos</button>
-        <button class="chip" data-q="Resumen de la semana">Resumen semanal</button>
-      </div>
-      <div class="chat-input-row">
-        <input id="chat-input" placeholder="Escribí tu pregunta…">
-        <button id="chat-send">↵</button>
-      </div>
-    </div>
 
     <script>
         const path = window.location.pathname.split('/').filter(Boolean);
@@ -1868,7 +1845,6 @@
             if (ql.length < 2) {
                 items.push({ kind: 'acción', ico: '➕', title: 'Agregar pendiente', sub: '', action: () => { closeSpotlight(); openAddTaskDialog(); } });
                 items.push({ kind: 'acción', ico: '🔄', title: 'Escanear Drive ahora', sub: '', action: async () => { closeSpotlight(); document.getElementById('scan-now-btn')?.click(); } });
-                items.push({ kind: 'acción', ico: '💬', title: 'Abrir chat IA', sub: '', action: () => { closeSpotlight(); openChat(); } });
             }
             SP_ITEMS = items.slice(0, 30);
             SP_SELECTED = 0;
@@ -1923,49 +1899,8 @@
             if (name === 'clients') loadClientsList();
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // ── CHAT IA ────────────────────────────────────────────────────
-        // ═══════════════════════════════════════════════════════════════
-        const chatToggle = document.getElementById('chat-toggle');
-        const chatPanel = document.getElementById('chat-panel');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-
-        function openChat() {
-            chatPanel.classList.add('open');
-            chatToggle.classList.add('open-state');
-            chatToggle.querySelector('.ico-main').textContent = '×';
-            chatToggle.querySelector('.ico-badge').style.display = 'none';
-            setTimeout(() => chatInput.focus(), 50);
-        }
-        function closeChat() {
-            chatPanel.classList.remove('open');
-            chatToggle.classList.remove('open-state');
-            chatToggle.querySelector('.ico-main').textContent = '✨';
-            chatToggle.querySelector('.ico-badge').style.display = 'flex';
-        }
-        chatToggle.onclick = () => chatPanel.classList.contains('open') ? closeChat() : openChat();
-        document.getElementById('chat-close').onclick = closeChat;
-
-        async function sendChat(question) {
-            if (!question.trim()) return;
-            chatMessages.insertAdjacentHTML('beforeend', `<div class="chat-msg user">${escapeHtml(question)}</div>`);
-            chatMessages.insertAdjacentHTML('beforeend', `<div class="chat-msg loading" id="chat-loading">pensando…</div>`);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            chatInput.value = '';
-            try {
-                const r = await api('POST', chatUrl(), { question });
-                document.getElementById('chat-loading')?.remove();
-                chatMessages.insertAdjacentHTML('beforeend', `<div class="chat-msg bot">${escapeHtml(r.answer || '(sin respuesta)')}</div>`);
-            } catch (e) {
-                document.getElementById('chat-loading')?.remove();
-                chatMessages.insertAdjacentHTML('beforeend', `<div class="chat-msg bot" style="color:var(--red);">Error: ${escapeHtml(e.message)}</div>`);
-            }
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        document.getElementById('chat-send').onclick = () => sendChat(chatInput.value);
-        chatInput.onkeydown = (e) => { if (e.key === 'Enter') sendChat(chatInput.value); };
-        document.querySelectorAll('#chat-suggestions .chip').forEach(c => c.onclick = () => sendChat(c.dataset.q));
+        // (Chat IA flotante removido por pedido del usuario)
+        function openChat() {} // stub no-op para que spotlight no rompa si llama
 
         // ═══════════════════════════════════════════════════════════════
         // ── CLIENTES ───────────────────────────────────────────────────
@@ -2271,9 +2206,6 @@
             } catch (e) { toast(e.message, true); }
             finally { btn.disabled = false; btn.textContent = '📧 Enviarme por mail'; }
         });
-
-        // Mostrar el chat toggle (escondido por default hasta que sepamos si IA está disponible)
-        chatToggle.style.display = IS_EDITOR_MODE ? 'none' : 'flex';
 
         // Init
         if (!TENANT_ID || !TOKEN || TENANT_ID === 'dashboard.html') {
