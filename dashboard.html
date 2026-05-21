@@ -109,6 +109,11 @@
             background: rgba(248, 113, 113, 0.08);
         }
         .cliente-card .cliente-name { color: var(--text); font-weight: 500; }
+        .cliente-card .folder-link {
+            text-decoration: none; font-size: 14px; opacity: 0.75;
+            margin-right: 2px; cursor: pointer; transition: opacity .15s, transform .15s;
+        }
+        .cliente-card .folder-link:hover { opacity: 1; transform: scale(1.15); }
         .cliente-card .urgent-mark { color: var(--red); }
         .cliente-card .cliente-note {
             color: var(--yellow); font-size: 11px; margin-left: 4px;
@@ -678,6 +683,18 @@
                 ${!IS_EDITOR_MODE ? `<div class="stat"><div class="label">${escapeHtml(STATE.profile.assignee_plural || 'Editores')}</div><strong>${STATE.editors.length}</strong></div>` : ''}
             `;
 
+            // Helper: encontrar la carpeta Drive de una task (matchea por nombre de cliente vs nombre de carpeta vinculada)
+            function folderUrlForTask(t) {
+                if (t.source_folder_id) return `https://drive.google.com/drive/folders/${t.source_folder_id}`;
+                const clientName = (t.client || t.title || '').toLowerCase().trim();
+                if (!clientName) return null;
+                const a = (ASSIGNMENTS || []).find(a => {
+                    const folderName = (a.folder_name || '').toLowerCase().trim();
+                    return folderName === clientName || folderName.includes(clientName) || clientName.includes(folderName);
+                });
+                return a?.folder_id ? `https://drive.google.com/drive/folders/${a.folder_id}` : null;
+            }
+
             const html = editors.map(e => {
                 const editorTasks = tasks.filter(t => t.assignee === e.name && t.status !== 'done');
                 const totalCount = editorTasks.reduce((s, t) => s + (parseInt(t.pending_count) || 1), 0);
@@ -698,9 +715,11 @@
                         <div class="clientes-list">
                             ${editorTasks.map(t => {
                                 const count = parseInt(t.pending_count) || 1;
+                                const folderUrl = folderUrlForTask(t);
                                 return `
                                 <div class="cliente-card ${t.urgent ? 'urgent' : ''}" data-tid="${t.id}" draggable="${!IS_EDITOR_MODE}"
                                      ondragstart="onDragStart(event, '${t.id}')" ondragend="onDragEnd(event)">
+                                    ${folderUrl ? `<a class="folder-link" href="${attrEscape(folderUrl)}" target="_blank" rel="noopener" title="Abrir carpeta en Drive" onclick="event.stopPropagation();">📁</a>` : ''}
                                     ${t.urgent ? '<span class="urgent-mark">🚨</span>' : ''}
                                     <span class="cliente-name">${escapeHtml(t.client || t.title || '—')}</span>
                                     <div class="count-controls">
@@ -1055,20 +1074,44 @@
             // Editores
             const list = document.getElementById('config-editors-list');
             list.innerHTML = STATE.editors.map(e => `
-                <div style="display: grid; grid-template-columns: 1fr 1.4fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <div data-editor-row="${e.id}" style="display: grid; grid-template-columns: 1fr 1.4fr auto auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
                     <input value="${attrEscape(e.name)}" data-id="${e.id}" data-field="name" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
                     <input value="${attrEscape(e.email || '')}" data-id="${e.id}" data-field="email" placeholder="email (opcional)" style="background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; font-family: inherit;">
+                    <button data-id="${e.id}" data-action="save-editor" style="background: var(--accent); border: 1px solid var(--accent); color: white; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; opacity: 0.5;" disabled>💾</button>
                     <button data-id="${e.id}" data-action="toggle-vacation" style="background: ${e.on_vacation ? 'rgba(251, 191, 36, 0.15)' : 'transparent'}; border: 1px solid var(--border); color: ${e.on_vacation ? 'var(--yellow)' : 'var(--text-dim)'}; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: inherit;">🌴</button>
                     <button data-id="${e.id}" data-action="del-editor" style="background: transparent; border: 1px solid var(--border); color: var(--red); padding: 7px 10px; border-radius: 6px; cursor: pointer; font-family: inherit;">✕</button>
                 </div>
             `).join('') || '<div class="empty">Sin editores</div>';
 
+            // Detectar cambios → habilitar botón Guardar de esa fila
             list.querySelectorAll('input').forEach(inp => {
-                inp.onblur = async () => {
-                    try { await api('PATCH', editorsUrl(), { id: inp.dataset.id, [inp.dataset.field]: inp.value.trim() }); await loadAll(); toast('Guardado'); }
-                    catch (e) { toast(e.message, true); }
+                inp.addEventListener('input', () => {
+                    const row = inp.closest('[data-editor-row]');
+                    const saveBtn = row.querySelector('[data-action="save-editor"]');
+                    saveBtn.disabled = false;
+                    saveBtn.style.opacity = '1';
+                    saveBtn.textContent = '💾 Guardar';
+                });
+                inp.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        inp.closest('[data-editor-row]').querySelector('[data-action="save-editor"]').click();
+                    }
                 };
-                inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
+            });
+            list.querySelectorAll('[data-action="save-editor"]').forEach(btn => {
+                btn.onclick = async () => {
+                    const row = btn.closest('[data-editor-row]');
+                    const name = row.querySelector('input[data-field="name"]').value.trim();
+                    const email = row.querySelector('input[data-field="email"]').value.trim();
+                    if (!name) { toast('Falta nombre', true); return; }
+                    btn.disabled = true; btn.textContent = '…';
+                    try {
+                        await api('PATCH', editorsUrl(), { id: btn.dataset.id, name, email });
+                        await loadAll();
+                        toast('✓ Editor guardado');
+                    } catch (e) { toast(e.message, true); btn.disabled = false; btn.textContent = '💾 Guardar'; }
+                };
             });
             list.querySelectorAll('[data-action="toggle-vacation"]').forEach(btn => {
                 btn.onclick = async () => {
@@ -1155,33 +1198,92 @@
             try {
                 const r = await api('GET', driveFoldersUrl(parent));
                 const folders = r.folders || [];
-                const back = parent !== 'root' ? `<div class="folder-row" data-back="1" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-dim);">⬅️ Volver a Mi Unidad</div>` : '';
-                list.innerHTML = back + (folders.length === 0 ?
-                    '<div class="empty" style="padding: 20px;">Sin carpetas acá.</div>' :
+                const back = parent !== 'root' ? `<div class="folder-row" data-back="1" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-dim);">⬅️ Volver atrás</div>` : '';
+
+                // Botón "Vincular esta carpeta" — vincula la carpeta donde estás parado ahora
+                const currentName = FOLDER_PATH[FOLDER_PATH.length - 1]?.name || 'Mi Unidad';
+                const linkCurrent = parent !== 'root' ? `
+                    <div style="padding: 12px; background: rgba(255, 107, 53, 0.08); border: 1px solid var(--accent); border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                        <span style="color: var(--text); font-size: 13px;">📍 Estás en <strong>${escapeHtml(currentName)}</strong></span>
+                        <button class="action-btn-main" id="link-current-folder" style="padding: 7px 14px; font-size: 12px;">🔗 Vincular ESTA carpeta</button>
+                    </div>
+                ` : '';
+
+                list.innerHTML = linkCurrent + back + (folders.length === 0 ?
+                    '<div class="empty" style="padding: 20px;">Sin subcarpetas acá.</div>' :
                     folders.map(f => `
-                        <div class="folder-row" data-id="${attrEscape(f.id)}" data-name="${attrEscape(f.name)}" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border);">
-                            <span>📁 ${escapeHtml(f.name)}</span>
-                            <button class="enter-folder" data-id="${attrEscape(f.id)}" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Entrar →</button>
+                        <div class="folder-row" data-id="${attrEscape(f.id)}" data-name="${attrEscape(f.name)}" style="padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 8px;">
+                            <span style="cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;">📁 ${escapeHtml(f.name)}</span>
+                            <div style="display:flex;gap:6px;flex-shrink:0;">
+                                <button class="enter-folder" data-id="${attrEscape(f.id)}" style="background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;">Entrar →</button>
+                                <button class="link-folder" data-id="${attrEscape(f.id)}" data-name="${attrEscape(f.name)}" style="background: var(--accent); border: 1px solid var(--accent); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">🔗 Vincular</button>
+                            </div>
                         </div>
                     `).join('')
                 );
+
+                // Click en row (no en los botones) → entrar a la subcarpeta
                 list.querySelectorAll('.folder-row').forEach(row => {
-                    row.onclick = (ev) => {
-                        if (ev.target.closest('.enter-folder')) return;
-                        if (row.dataset.back) { FOLDER_PATH = [{id:'root',name:'Mi Unidad'}]; loadDriveFolders('root'); return; }
-                        list.querySelectorAll('.folder-row').forEach(r => r.style.background = '');
-                        row.style.background = 'rgba(255, 107, 53, 0.15)';
-                        SELECTED_FOLDER = { id: row.dataset.id, name: row.dataset.name };
-                    };
+                    const nameSpan = row.querySelector('span');
+                    if (nameSpan) {
+                        nameSpan.onclick = (ev) => {
+                            ev.stopPropagation();
+                            if (row.dataset.back) { FOLDER_PATH.pop(); loadDriveFolders(FOLDER_PATH[FOLDER_PATH.length - 1].id); return; }
+                            FOLDER_PATH.push({id: row.dataset.id, name: row.dataset.name});
+                            loadDriveFolders(row.dataset.id);
+                        };
+                    }
+                    if (row.dataset.back) {
+                        row.onclick = () => { FOLDER_PATH.pop(); loadDriveFolders(FOLDER_PATH[FOLDER_PATH.length - 1].id); };
+                    }
                 });
                 list.querySelectorAll('.enter-folder').forEach(btn => {
-                    btn.onclick = (ev) => { ev.stopPropagation(); FOLDER_PATH.push({id: btn.dataset.id, name: btn.closest('.folder-row').dataset.name}); loadDriveFolders(btn.dataset.id); };
+                    btn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        const row = btn.closest('.folder-row');
+                        FOLDER_PATH.push({id: btn.dataset.id, name: row.dataset.name});
+                        loadDriveFolders(btn.dataset.id);
+                    };
                 });
+                // Vincular una subcarpeta directo desde la lista
+                list.querySelectorAll('.link-folder').forEach(btn => {
+                    btn.onclick = (ev) => {
+                        ev.stopPropagation();
+                        SELECTED_FOLDER = { id: btn.dataset.id, name: btn.dataset.name };
+                        startAssignmentFlow();
+                    };
+                });
+                // Vincular la carpeta donde estoy
+                document.getElementById('link-current-folder')?.addEventListener('click', () => {
+                    SELECTED_FOLDER = { id: parent, name: currentName };
+                    startAssignmentFlow();
+                });
+
                 document.getElementById('folder-breadcrumb').textContent = FOLDER_PATH.map(p => p.name).join(' / ');
             } catch (e) {
                 list.innerHTML = `<div style="padding:14px; color: var(--red);">${escapeHtml(e.message)}</div>`;
             }
         }
+
+        // Helper: arranca el flujo de vincular usando SELECTED_FOLDER
+        function startAssignmentFlow() {
+            if (!SELECTED_FOLDER) return;
+            // Mostrar el panel de paso 2 con la carpeta seleccionada
+            document.getElementById('folder-picker').style.display = 'block';
+            document.getElementById('folder-check-result').innerHTML = `
+                <div style="padding: 10px 12px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 8px; font-size: 13px; color: var(--green);">
+                    ✓ <strong>${escapeHtml(SELECTED_FOLDER.name)}</strong> seleccionada
+                </div>
+            `;
+            const step2 = document.getElementById('folder-picker-step2');
+            step2.style.display = 'block';
+            // Poblar dropdown de editores (mismo formato que check-folder-btn)
+            const sel = document.getElementById('assign-editor');
+            sel.innerHTML = STATE.editors.map(e => `<option value="${attrEscape(e.id)}" data-name="${attrEscape(e.name)}">${escapeHtml(e.name)}</option>`).join('');
+            // Scroll para que se vea
+            step2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        window.startAssignmentFlow = startAssignmentFlow;
 
         async function loadStats() {
             try {
@@ -1744,8 +1846,8 @@
                 loadClientsList().catch(() => {});
                 // Auto-scan inicial 2s después de cargar (no bloquea el render)
                 setTimeout(autoScan, 2000);
-                // Y cada 90s
-                setInterval(autoScan, 90 * 1000);
+                // Y cada 30s (antes era 90s — el usuario quería más en vivo)
+                setInterval(autoScan, 30 * 1000);
             });
         }
     </script>

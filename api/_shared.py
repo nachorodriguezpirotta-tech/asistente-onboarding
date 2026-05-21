@@ -32,10 +32,14 @@ def _kv_request(command_list: list) -> dict:
         return json.loads(resp.read())
 
 
-def kv_set(key: str, value: dict, ttl_seconds: int = 7 * 24 * 3600):
-    """Guarda dict como JSON. TTL por defecto 7 días."""
+def kv_set(key: str, value: dict, ttl_seconds: int = 0):
+    """Guarda dict como JSON. SIN TTL por defecto (persiste para siempre).
+    Si ttl_seconds > 0, se aplica TTL. Antes era 7 días y borraba data crítica."""
     payload = json.dumps(value)
-    _kv_request(["SET", key, payload, "EX", str(ttl_seconds)])
+    if ttl_seconds and ttl_seconds > 0:
+        _kv_request(["SET", key, payload, "EX", str(ttl_seconds)])
+    else:
+        _kv_request(["SET", key, payload])
 
 
 def kv_get(key: str) -> Optional[dict]:
@@ -47,6 +51,27 @@ def kv_get(key: str) -> Optional[dict]:
         return json.loads(raw)
     except Exception:
         return None
+
+
+def kv_lock(key: str, ttl_seconds: int = 60) -> bool:
+    """Intenta adquirir un lock en Redis (SET NX EX). Devuelve True si lo consiguió.
+
+    Usado para prevenir race conditions cuando 2 procesos scanean el mismo tenant a la vez.
+    """
+    try:
+        r = _kv_request(["SET", key, "1", "NX", "EX", str(ttl_seconds)])
+        # Upstash devuelve {"result": "OK"} si SET tuvo éxito, o {"result": null} si NX falló
+        return r.get("result") == "OK"
+    except Exception:
+        return False
+
+
+def kv_unlock(key: str):
+    """Libera un lock."""
+    try:
+        _kv_request(["DEL", key])
+    except Exception:
+        pass
 
 
 def kv_update(key: str, updates: dict) -> Optional[dict]:

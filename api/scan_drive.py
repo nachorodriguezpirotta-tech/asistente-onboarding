@@ -30,7 +30,7 @@ from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response, timeline_add
+from _shared import kv_get, kv_set, json_response, timeline_add, kv_lock, kv_unlock
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
@@ -254,6 +254,19 @@ class handler(BaseHTTPRequestHandler):
         if not verify_token(tenant_id, token):
             return json_response(self, {"error": "Token inválido"}, 403)
 
+        # Lock: si ya hay un scan corriendo para este tenant, salir sin hacer nada
+        # (previene mails duplicados cuando el front y el cron coinciden)
+        lock_key = f"tenant:{tenant_id}:scan_lock"
+        if not kv_lock(lock_key, ttl_seconds=120):
+            return json_response(self, {"ok": True, "skipped": True, "reason": "scan_in_progress",
+                                        "new_tasks": 0, "completed_tasks": 0, "scanned_folders": 0})
+
+        try:
+            return self._scan_inner(tenant_id)
+        finally:
+            kv_unlock(lock_key)
+
+    def _scan_inner(self, tenant_id: str):
         tenant = kv_get(f"tenant:{tenant_id}")
         if not tenant:
             return json_response(self, {"error": "Tenant no encontrado"}, 404)
