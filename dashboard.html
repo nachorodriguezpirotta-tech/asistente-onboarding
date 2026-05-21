@@ -395,6 +395,29 @@
 
         /* ── Modal grande ── */
         .modal.modal-lg { max-width: 640px; }
+
+        /* ── Revisiones badge + cards ── */
+        .rev-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: var(--red); color: white; font-size: 10px; font-weight: 700;
+            min-width: 18px; height: 18px; padding: 0 5px; border-radius: 100px;
+            margin-left: 4px;
+        }
+        .rev-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+        }
+        .rev-card.open { border-left: 3px solid var(--red); }
+        .rev-card.resolved { opacity: 0.65; border-left: 3px solid var(--green); }
+        .rev-card .rev-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .rev-card .rev-client { font-weight: 700; color: var(--text); font-size: 15px; }
+        .rev-card .rev-meta { color: var(--text-dim); font-size: 12px; }
+        .rev-card .rev-msg { background: var(--bg-card-2); padding: 10px 14px; border-radius: 8px; font-size: 14px; color: var(--text); white-space: pre-wrap; border-left: 3px solid var(--yellow); margin-bottom: 10px; }
+        .rev-card .rev-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .rev-card .rev-task-link { color: var(--accent); text-decoration: none; font-size: 13px; }
+        .rev-card .rev-task-link:hover { text-decoration: underline; }
+
+        .rev-filter.active { background: var(--accent); color: white; border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -418,6 +441,7 @@
         <div class="action-bar" id="action-bar">
             <button class="action-btn-main" onclick="openAddTaskDialog()">+ Agregar pendiente</button>
             <a class="action-link active" data-view="overview">📋 Pendientes</a>
+            <a class="action-link" data-view="revisions">🔁 Revisiones <span class="rev-badge" id="rev-badge" style="display:none;"></span></a>
             <a class="action-link" data-view="stats">📊 Stats</a>
             <a class="action-link" data-view="clients">👥 Clientes</a>
             <a class="action-link" data-view="calendar">📅 Calendario</a>
@@ -458,6 +482,22 @@
                 </div>
                 <p class="hint">Registrá los datos de tus clientes para mandarles mail al entregar y darles un portal para ver sus pedidos.</p>
                 <div id="clients-list"></div>
+            </div>
+        </div>
+
+        <!-- VIEW: REVISIONES -->
+        <div class="view" id="view-revisions">
+            <div class="settings-block">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                    <h3 style="margin:0;">Revisiones del cliente</h3>
+                    <div style="display:flex;gap:6px;">
+                        <button class="action-link rev-filter active" data-status="open" style="font-size:12px;">🚨 Abiertas</button>
+                        <button class="action-link rev-filter" data-status="resolved" style="font-size:12px;">✅ Resueltas</button>
+                        <button class="action-link rev-filter" data-status="all" style="font-size:12px;">Todas</button>
+                    </div>
+                </div>
+                <p class="hint">Cuando un cliente entra a su portal y pide un cambio, aparece acá. La tarea se marca como urgente automáticamente y le llega mail al editor.</p>
+                <div id="revisions-list"></div>
             </div>
         </div>
 
@@ -548,9 +588,42 @@
                 <h3>Marca del negocio</h3>
                 <label style="display: block; color: var(--text); font-size: 13px; margin: 0 0 4px;">Nombre</label>
                 <input id="set-brand-name" style="width: 100%; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;">
-                <label style="display: block; color: var(--text); font-size: 13px; margin: 12px 0 4px;">Email admin</label>
-                <input id="set-admin-email" style="width: 100%; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;">
                 <button class="action-btn-main" id="save-settings-btn" style="margin-top: 14px;">Guardar marca</button>
+            </div>
+
+            <div class="settings-block">
+                <h3>🔔 Tus notificaciones</h3>
+                <p class="hint">Configurá tu mail y qué eventos querés recibir personalmente. Estos mails te llegan a vos (no a los editores ni clientes).</p>
+
+                <label style="display: block; color: var(--text); font-size: 13px; margin: 0 0 4px;">Mi email</label>
+                <input id="set-admin-email" placeholder="tu@email.com" style="width: 100%; background: var(--bg-card-2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;">
+
+                <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-card-2); border-radius: 8px; cursor: pointer;">
+                        <input type="checkbox" id="notif-task-done" style="width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="color: var(--text); font-weight: 600; font-size: 14px;">✅ Cuando un editor termina una tarea</div>
+                            <div style="color: var(--text-dim); font-size: 12px;">Te avisamos por mail apenas se entrega (manual o automático por Drive)</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-card-2); border-radius: 8px; cursor: pointer;">
+                        <input type="checkbox" id="notif-revision" style="width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="color: var(--text); font-weight: 600; font-size: 14px;">📝 Cuando un cliente pide una revisión</div>
+                            <div style="color: var(--text-dim); font-size: 12px;">Apenas cargan un cambio en el portal del cliente, te llega + va al tab Revisiones</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-card-2); border-radius: 8px; cursor: pointer;">
+                        <input type="checkbox" id="notif-upload" style="width: 18px; height: 18px;">
+                        <div style="flex: 1;">
+                            <div style="color: var(--text); font-weight: 600; font-size: 14px;">📥 Cuando un cliente sube material nuevo</div>
+                            <div style="color: var(--text-dim); font-size: 12px;">Te enterás antes que el editor. Si tenés mucho volumen, mejor dejalo apagado.</div>
+                        </div>
+                    </label>
+                </div>
+
+                <button class="action-btn-main" id="save-notifs-btn" style="margin-top: 14px;">💾 Guardar notificaciones</button>
+                <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">Los mails salen desde tu cuenta de Google conectada (gmail.com / Workspace).</p>
             </div>
 
             <div class="settings-block">
@@ -666,6 +739,7 @@
         const commentsUrl = (extra = '') => `/api/comments?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
         const chatUrl = () => `/api/chat?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
         const digestUrl = () => `/api/weekly_digest?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}`;
+        const revisionsUrl = (extra = '') => `/api/revisions?tenant=${TENANT_ID}&t=${encodeURIComponent(TOKEN)}${extra}`;
 
         async function loadAll() {
             try {
@@ -1125,6 +1199,10 @@
             const p = STATE.profile;
             document.getElementById('set-brand-name').value = p.brand_name || '';
             document.getElementById('set-admin-email').value = p.admin_email || '';
+            // Preferencias de notificaciones
+            document.getElementById('notif-task-done').checked = !!p.notify_on_task_done;
+            document.getElementById('notif-revision').checked = !!p.notify_on_revision;
+            document.getElementById('notif-upload').checked = !!p.notify_on_upload;
 
             // Editores
             const list = document.getElementById('config-editors-list');
@@ -1411,6 +1489,7 @@
                 if (t.dataset.view === 'stats') loadStats();
                 if (t.dataset.view === 'calendar') renderCalendar();
                 if (t.dataset.view === 'clients') loadClientsList();
+                if (t.dataset.view === 'revisions') loadRevisions();
             };
         });
 
@@ -1433,19 +1512,35 @@
             renderConfig();
         };
 
-        // Save brand settings
+        // Save brand settings (solo brand_name — email se guarda con notificaciones)
         document.getElementById('save-settings-btn').onclick = async () => {
             const btn = document.getElementById('save-settings-btn');
             btn.disabled = true; btn.textContent = 'Guardando...';
             try {
                 await api('PATCH', tenantUrl(), {
                     brand_name: document.getElementById('set-brand-name').value.trim(),
-                    admin_email: document.getElementById('set-admin-email').value.trim(),
                 });
                 await loadAll();
-                toast('Guardado');
+                toast('Marca guardada');
             } catch (e) { toast(e.message, true); }
             finally { btn.disabled = false; btn.textContent = 'Guardar marca'; }
+        };
+
+        // Save notification prefs
+        document.getElementById('save-notifs-btn').onclick = async () => {
+            const btn = document.getElementById('save-notifs-btn');
+            btn.disabled = true; btn.textContent = 'Guardando…';
+            try {
+                await api('PATCH', tenantUrl(), {
+                    admin_email: document.getElementById('set-admin-email').value.trim(),
+                    notify_on_task_done: document.getElementById('notif-task-done').checked,
+                    notify_on_revision: document.getElementById('notif-revision').checked,
+                    notify_on_upload: document.getElementById('notif-upload').checked,
+                });
+                await loadAll();
+                toast('✓ Preferencias guardadas');
+            } catch (e) { toast(e.message, true); }
+            finally { btn.disabled = false; btn.textContent = '💾 Guardar notificaciones'; }
         };
 
         // Calendar nav
@@ -1867,6 +1962,104 @@
         document.getElementById('add-client-btn')?.addEventListener('click', () => openClientDialog());
 
         // ═══════════════════════════════════════════════════════════════
+        // ── REVISIONES ─────────────────────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════
+        let REV_FILTER = 'open';
+        STATE.revisions = [];
+
+        async function loadRevisions() {
+            try {
+                const r = await api('GET', revisionsUrl(`&status=${REV_FILTER}`));
+                STATE.revisions = r.revisions || [];
+                renderRevisions();
+            } catch (e) {
+                document.getElementById('revisions-list').innerHTML = `<div class="empty" style="color:var(--red);">Error: ${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        async function refreshRevisionBadge() {
+            // Mostrar badge con cantidad de open SIEMPRE (independiente del filter actual)
+            try {
+                const r = await api('GET', revisionsUrl('&status=open'));
+                const open = (r.revisions || []).length;
+                const badge = document.getElementById('rev-badge');
+                if (badge) {
+                    if (open > 0) { badge.textContent = open; badge.style.display = 'inline-flex'; }
+                    else { badge.style.display = 'none'; }
+                }
+            } catch {}
+        }
+
+        function renderRevisions() {
+            const list = document.getElementById('revisions-list');
+            const revs = STATE.revisions || [];
+            if (revs.length === 0) {
+                list.innerHTML = `<div class="empty">${REV_FILTER === 'open' ? '🎉 Sin revisiones abiertas.' : 'Sin revisiones acá.'}</div>`;
+                return;
+            }
+            list.innerHTML = revs.map(r => {
+                const task = STATE.tasks.find(t => t.id === r.task_id);
+                const taskTitle = task ? (task.title || task.client) : '(tarea eliminada)';
+                const editor = task?.assignee || '—';
+                return `
+                  <div class="rev-card ${r.status === 'resolved' ? 'resolved' : 'open'}">
+                    <div class="rev-head">
+                      <div>
+                        <div class="rev-client">👤 ${escapeHtml(r.client_name)}</div>
+                        <div class="rev-meta">Sobre: <strong style="color:var(--text);">${escapeHtml(taskTitle)}</strong> · ${escapeHtml(editor)} · ${fmtAgo(r.created_at)}</div>
+                      </div>
+                      <span style="font-size:11px;background:${r.status === 'resolved' ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'};color:${r.status === 'resolved' ? 'var(--green)' : 'var(--red)'};padding:4px 10px;border-radius:100px;font-weight:600;">${r.status === 'resolved' ? '✅ resuelta' : '🚨 abierta'}</span>
+                    </div>
+                    <div class="rev-msg">${escapeHtml(r.message)}</div>
+                    ${r.resolution_note ? `<div style="background:rgba(74,222,128,0.06);padding:8px 12px;border-radius:6px;font-size:12px;color:var(--text-dim);margin-bottom:10px;"><strong>Resolución:</strong> ${escapeHtml(r.resolution_note)}</div>` : ''}
+                    <div class="rev-actions">
+                      ${task ? `<button class="action-link" data-open-task="${r.task_id}" style="font-size:12px;">📂 Abrir tarea</button>` : ''}
+                      ${r.status === 'open'
+                        ? `<button class="action-link" data-resolve="${r.id}" style="font-size:12px;color:var(--green);">✓ Marcar resuelta</button>`
+                        : `<button class="action-link" data-reopen="${r.id}" style="font-size:12px;">↩ Reabrir</button>`}
+                      <button class="action-link" data-del-rev="${r.id}" style="font-size:12px;color:var(--red);margin-left:auto;">🗑</button>
+                    </div>
+                  </div>`;
+            }).join('');
+
+            list.querySelectorAll('[data-open-task]').forEach(b => b.onclick = () => {
+                const t = STATE.tasks.find(x => x.id === b.dataset.openTask);
+                if (t) openNoteDialog(t);
+            });
+            list.querySelectorAll('[data-resolve]').forEach(b => b.onclick = async () => {
+                const note = prompt('Nota de resolución (opcional):', '');
+                if (note === null) return;
+                try {
+                    await api('PATCH', revisionsUrl(), { id: b.dataset.resolve, status: 'resolved', resolution_note: note });
+                    loadRevisions(); refreshRevisionBadge();
+                    toast('Marcada resuelta');
+                } catch (e) { toast(e.message, true); }
+            });
+            list.querySelectorAll('[data-reopen]').forEach(b => b.onclick = async () => {
+                try {
+                    await api('PATCH', revisionsUrl(), { id: b.dataset.reopen, status: 'open' });
+                    loadRevisions(); refreshRevisionBadge();
+                } catch (e) { toast(e.message, true); }
+            });
+            list.querySelectorAll('[data-del-rev]').forEach(b => b.onclick = async () => {
+                if (!confirm('Borrar esta revisión?')) return;
+                try {
+                    await api('DELETE', revisionsUrl(`&id=${b.dataset.delRev}`));
+                    loadRevisions(); refreshRevisionBadge();
+                } catch (e) { toast(e.message, true); }
+            });
+        }
+
+        document.querySelectorAll('.rev-filter').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.rev-filter').forEach(x => x.classList.remove('active'));
+                btn.classList.add('active');
+                REV_FILTER = btn.dataset.status;
+                loadRevisions();
+            };
+        });
+
+        // ═══════════════════════════════════════════════════════════════
         // ── WEEKLY DIGEST ──────────────────────────────────────────────
         // ═══════════════════════════════════════════════════════════════
         document.getElementById('load-digest-btn')?.addEventListener('click', async () => {
@@ -1910,10 +2103,14 @@
             loadAll().then(() => {
                 // Pre-cargar clientes para que aparezcan en spotlight
                 loadClientsList().catch(() => {});
+                // Pre-cargar revisiones para el badge
+                refreshRevisionBadge();
                 // Auto-scan inicial 2s después de cargar (no bloquea el render)
                 setTimeout(autoScan, 2000);
                 // Y cada 30s (antes era 90s — el usuario quería más en vivo)
                 setInterval(autoScan, 30 * 1000);
+                // Refresh badge revisiones cada 60s
+                setInterval(refreshRevisionBadge, 60 * 1000);
             });
         }
     </script>

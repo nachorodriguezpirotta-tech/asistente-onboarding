@@ -20,7 +20,7 @@ import secrets as _secrets
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response, read_json_body, timeline_add
+from _shared import kv_get, kv_set, json_response, read_json_body, timeline_add, notify_via_tenant
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
@@ -33,6 +33,12 @@ def verify_token(tenant_id, token):
 
 def now_iso():
     return datetime.datetime.utcnow().isoformat() + "Z"
+
+
+def _h(s):
+    """Escape para HTML."""
+    s = str(s or "")
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
 class handler(BaseHTTPRequestHandler):
@@ -160,6 +166,28 @@ class handler(BaseHTTPRequestHandler):
                 timeline_add(tenant_id, ev_type, client=cli, actor="manual", payload=payload)
             except Exception:
                 pass
+
+        # Mail al admin si se completó una tarea y tiene la pref activada
+        if any(ev[0] == "task_done" for ev in events_to_emit):
+            try:
+                tenant = kv_get(f"tenant:{tenant_id}") or {}
+                if tenant.get("notify_on_task_done") and tenant.get("admin_email"):
+                    brand = tenant.get("brand_name") or "Asistente"
+                    cli = updated.get("client") or updated.get("title") or "—"
+                    asg = updated.get("assignee") or "—"
+                    subject = f"✅ {asg} entregó: {cli}"
+                    text = f"{asg} marcó como entregado:\n\n• {updated.get('title') or cli}\n\nDashboard: ver pendientes restantes en tu panel.\n— {brand}"
+                    html = f"""<html><body style="font-family:-apple-system,Segoe UI,sans-serif;max-width:600px;color:#222;line-height:1.6;">
+<h2 style="color:#4ade80;">✅ {_h(asg)} entregó</h2>
+<p style="font-size:16px;"><strong>{_h(updated.get('title') or cli)}</strong></p>
+<p style="color:#666;">Cliente: {_h(cli)}</p>
+<hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+<p style="color:#888;font-size:12px;">— {_h(brand)}</p>
+</body></html>"""
+                    notify_via_tenant(tenant_id, tenant["admin_email"], subject, text, html)
+            except Exception:
+                pass
+
         return json_response(self, {"ok": True, "task": updated})
 
     def do_DELETE(self):

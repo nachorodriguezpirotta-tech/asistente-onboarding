@@ -15,7 +15,7 @@ import secrets as _secrets
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response, read_json_body, timeline_add
+from _shared import kv_get, kv_set, json_response, read_json_body, timeline_add, notify_via_tenant
 
 
 def now_iso():
@@ -142,16 +142,71 @@ class handler(BaseHTTPRequestHandler):
         except Exception:
             pass
 
-        # 3) Marcar task como urgente + append a notes
+        # 3) Marcar task como urgente + append a notes + sacar el editor asignado
         tasks = kv_get(f"tenant:{tenant_id}:tasks") or []
+        editor_name = ""
+        task_title = ""
         for t in tasks:
             if t.get("id") == task_id:
                 t["urgent"] = True
+                # Si la task estaba "done", reabrirla
+                if t.get("status") == "done":
+                    t["status"] = "pending"
+                    t["pending_count"] = max(1, int(t.get("pending_count", 0)))
                 existing_notes = (t.get("notes") or "").rstrip()
                 stamp = now_iso()
                 addition = f"[Revisión cliente {client_name} {stamp}] {message}"
                 t["notes"] = (existing_notes + "\n\n" + addition).strip() if existing_notes else addition
+                editor_name = t.get("assignee", "")
+                task_title = t.get("title") or t.get("client") or ""
                 break
         kv_set(f"tenant:{tenant_id}:tasks", tasks)
+
+        # 4) Mail al admin (Rafa) si tiene la pref activada
+        tenant_doc = kv_get(f"tenant:{tenant_id}") or {}
+        try:
+            if tenant_doc.get("notify_on_revision") and tenant_doc.get("admin_email"):
+                brand = tenant_doc.get("brand_name") or "Asistente"
+                subject = f"📝 Revisión pedida por {client_name}"
+                text = (f"{client_name} pidió un cambio sobre: {task_title}\n\n"
+                        f"Mensaje:\n{message}\n\n"
+                        f"Editor asignado: {editor_name or '(sin asignar)'}\n\n"
+                        f"La tarea se marcó como urgente automáticamente.\n\n— {brand}")
+                html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                        f"max-width:600px;color:#222;line-height:1.6;'>"
+                        f"<h2 style='color:#f87171;'>📝 Revisión pedida por {client_name}</h2>"
+                        f"<p><strong>Sobre:</strong> {task_title}</p>"
+                        f"<div style='background:#fef3c7;border-left:3px solid #f59e0b;padding:12px 16px;border-radius:6px;margin:14px 0;color:#000;'>"
+                        f"<strong>Mensaje del cliente:</strong><br>{message}</div>"
+                        f"<p><strong>Editor asignado:</strong> {editor_name or '(sin asignar)'}</p>"
+                        f"<p style='color:#666;font-size:13px;'>La tarea se marcó como 🚨 urgente automáticamente.</p>"
+                        f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
+                        f"</body></html>")
+                notify_via_tenant(tenant_id, tenant_doc["admin_email"], subject, text, html)
+        except Exception:
+            pass
+
+        # 5) Mail al editor asignado avisando del cambio
+        try:
+            editors = kv_get(f"tenant:{tenant_id}:editors") or []
+            editor_obj = next((e for e in editors if e.get("name") == editor_name), None)
+            if editor_obj and editor_obj.get("email"):
+                brand = tenant_doc.get("brand_name") or "Asistente"
+                subject = f"🚨 Revisión del cliente — {client_name}"
+                text = (f"Hola {editor_name},\n\n{client_name} pidió un cambio sobre: {task_title}\n\n"
+                        f"Mensaje del cliente:\n{message}\n\n"
+                        f"La tarea está marcada como urgente.\n— {brand}")
+                html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                        f"max-width:600px;color:#222;line-height:1.6;'>"
+                        f"<h2 style='color:#f87171;'>🚨 Revisión del cliente</h2>"
+                        f"<p>Hola <strong>{editor_name}</strong>, {client_name} pidió un cambio sobre:</p>"
+                        f"<p style='font-size:16px;'><strong>{task_title}</strong></p>"
+                        f"<div style='background:#fef3c7;border-left:3px solid #f59e0b;padding:12px 16px;border-radius:6px;margin:14px 0;color:#000;'>"
+                        f"<strong>Pedido del cliente:</strong><br>{message}</div>"
+                        f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
+                        f"</body></html>")
+                notify_via_tenant(tenant_id, editor_obj["email"], subject, text, html)
+        except Exception:
+            pass
 
         return json_response(self, {"ok": True})

@@ -30,7 +30,7 @@ from email.mime.text import MIMEText
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from _shared import kv_get, kv_set, json_response, timeline_add, kv_lock, kv_unlock
+from _shared import kv_get, kv_set, json_response, timeline_add, kv_lock, kv_unlock, notify_via_tenant
 
 
 SECRET = os.environ.get("DASHBOARD_SECRET", "CHANGE_ME")
@@ -403,6 +403,23 @@ class handler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
+                # Mail al admin si tiene la pref de notif on upload
+                try:
+                    if tenant.get("notify_on_upload") and tenant.get("admin_email"):
+                        brand = tenant.get("brand_name") or "Asistente"
+                        adm_subject = f"📥 {real_client_name} subió material ({new_inputs})"
+                        adm_text = (f"{real_client_name} subió {new_inputs} archivo(s).\n"
+                                    f"Asignado a {editor_name}.\n\n— {brand}")
+                        adm_html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                                    f"max-width:600px;color:#222;line-height:1.6;'>"
+                                    f"<h2 style='color:#ff6b35;'>📥 {real_client_name} subió material</h2>"
+                                    f"<p><strong>{new_inputs}</strong> archivo(s) nuevo(s) → asignado a <strong>{editor_name}</strong></p>"
+                                    f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
+                                    f"</body></html>")
+                        notify_via_tenant(tenant_id, tenant["admin_email"], adm_subject, adm_text, adm_html)
+                except Exception:
+                    pass
+
             # Si hay editados nuevos → reducir count
             if new_outputs > 0 and existing_task:
                 current = existing_task.get("pending_count") or 1
@@ -429,6 +446,24 @@ class handler(BaseHTTPRequestHandler):
                             notify_client_delivery(tenant, client_record, existing_task, access_token, output_folder_id)
                     except Exception as e:
                         errors.append(f"mail cliente {real_client_name}: {e}")
+
+                    # Mail al admin (Rafa) si tiene la pref activada
+                    try:
+                        if tenant.get("notify_on_task_done") and tenant.get("admin_email"):
+                            brand = tenant.get("brand_name") or "Asistente"
+                            adm_subject = f"✅ {editor_name} entregó: {real_client_name}"
+                            adm_text = (f"{editor_name} terminó el pedido de {real_client_name}.\n\n"
+                                        f"Se detectó automáticamente en la carpeta de entregas.\n\n— {brand}")
+                            adm_html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                                        f"max-width:600px;color:#222;line-height:1.6;'>"
+                                        f"<h2 style='color:#4ade80;'>✅ {editor_name} entregó</h2>"
+                                        f"<p><strong>Cliente:</strong> {real_client_name}</p>"
+                                        f"<p style='color:#666;'>Detectado automáticamente en la carpeta de entregas.</p>"
+                                        f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
+                                        f"</body></html>")
+                            notify_via_tenant(tenant_id, tenant["admin_email"], adm_subject, adm_text, adm_html)
+                    except Exception:
+                        pass
                 else:
                     existing_task["pending_count"] = new_count
 

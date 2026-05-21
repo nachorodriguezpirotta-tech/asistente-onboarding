@@ -96,7 +96,11 @@ class handler(BaseHTTPRequestHandler):
                    "output_singular", "output_plural",
                    "assignee_singular", "assignee_plural",
                    "project_singular", "project_plural",
-                   "primary_color", "accent_color"}
+                   "primary_color", "accent_color",
+                   # Preferencias de notificaciones del admin (Rafa)
+                   "notify_on_task_done",     # mail al admin cuando editor termina
+                   "notify_on_revision",      # mail al admin cuando cliente pide cambio
+                   "notify_on_upload"}        # mail al admin cuando cliente sube material
         clean = {k: v for k, v in updates.items() if k in allowed}
         if not clean:
             return json_response(self, {"error": "Nada que actualizar"}, 400)
