@@ -721,7 +721,7 @@
     </button>
     <div class="chat-panel" id="chat-panel">
       <div class="chat-header">
-        <strong>💬 Asistente IA</strong>
+        <strong>💬 Crudo IA</strong>
         <button class="x" id="chat-close">×</button>
       </div>
       <div class="chat-messages" id="chat-messages">
@@ -825,8 +825,8 @@
 
         function render() {
             const p = STATE.profile;
-            document.title = `${p.brand_name || 'Asistente'} — ${IS_EDITOR_MODE ? EDITOR_VIEW : 'Dashboard'}`;
-            document.getElementById('nav-brand').textContent = p.brand_name || 'Asistente';
+            document.title = `${p.brand_name || 'Crudo'} — ${IS_EDITOR_MODE ? EDITOR_VIEW : 'Dashboard'}`;
+            document.getElementById('nav-brand').textContent = p.brand_name || 'Crudo';
             document.getElementById('nav-admin').textContent = IS_EDITOR_MODE ? `Vista de ${EDITOR_VIEW}` : 'Admin';
             document.getElementById('nav-subtitle').textContent = `${p.input_plural || 'archivos'} → ${p.output_plural || 'entregas'}`;
             document.getElementById('drive-email').textContent = p.google_email || '—';

@@ -208,7 +208,7 @@ def notify_editor_new_task(tenant: dict, editor: dict, task: dict, access_token:
     if not editor_email:
         return False  # editor sin email — skip
 
-    brand = tenant.get("brand_name", "Asistente")
+    brand = tenant.get("brand_name", "Crudo")
     drive_link = f"https://drive.google.com/drive/folders/{folder_id}" if folder_id else ""
     count = task.get("pending_count", 1)
     output_singular = tenant.get("output_singular", "tarea")
@@ -416,7 +416,7 @@ class handler(BaseHTTPRequestHandler):
                 # Mail al admin si tiene la pref de notif on upload
                 try:
                     if tenant.get("notify_on_upload") and tenant.get("admin_email"):
-                        brand = tenant.get("brand_name") or "Asistente"
+                        brand = tenant.get("brand_name") or "Crudo"
                         input_link = f"https://drive.google.com/drive/folders/{folder_id}"
                         first_file = new_input_files[0] if new_input_files else f"{new_inputs} archivos"
                         files_text = "\n".join(f"  • {n}" for n in new_input_files) if new_input_files else f"  • {new_inputs} archivo(s)"
@@ -476,7 +476,7 @@ class handler(BaseHTTPRequestHandler):
                     # Mail al admin (Rafa) si tiene la pref activada
                     try:
                         if tenant.get("notify_on_task_done") and tenant.get("admin_email"):
-                            brand = tenant.get("brand_name") or "Asistente"
+                            brand = tenant.get("brand_name") or "Crudo"
                             output_link = f"https://drive.google.com/drive/folders/{output_folder_id}" if output_folder_id else ""
 
                             # Armar listado de archivos (puede haber 1 o varios)

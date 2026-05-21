@@ -285,7 +285,7 @@
         const r = await fetch(API);
         if (!r.ok) throw new Error('No se pudo cargar el portal');
         DATA = await r.json();
-        document.title = `Mi portal · ${DATA.brand_name || 'Asistente'}`;
+        document.title = `Mi portal · ${DATA.brand_name || 'Crudo'}`;
         render();
       } catch(e) {
         document.getElementById('app').innerHTML = `<div class="empty"><h1 style="color:#fff;font-size:20px;margin-bottom:8px;">Link inválido o expirado</h1>Pediles a tu equipo un link nuevo.<br><br><span style="font-size:11px;color:#444;">${esc(e.message)}</span></div>`;
@@ -352,7 +352,7 @@
         ` : ''}
 
         <footer>
-          Portal generado por <strong>${brand}</strong> — Powered by Asistente
+          Portal generado por <strong>${brand}</strong> — Powered by Crudo
         </footer>
       `;
 

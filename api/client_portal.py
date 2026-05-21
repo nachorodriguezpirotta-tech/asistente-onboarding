@@ -166,7 +166,7 @@ class handler(BaseHTTPRequestHandler):
         tenant_doc = kv_get(f"tenant:{tenant_id}") or {}
         try:
             if tenant_doc.get("notify_on_revision") and tenant_doc.get("admin_email"):
-                brand = tenant_doc.get("brand_name") or "Asistente"
+                brand = tenant_doc.get("brand_name") or "Crudo"
                 subject = f"📝 Revisión pedida por {client_name}"
                 text = (f"{client_name} pidió un cambio sobre: {task_title}\n\n"
                         f"Mensaje:\n{message}\n\n"
@@ -191,7 +191,7 @@ class handler(BaseHTTPRequestHandler):
             editors = kv_get(f"tenant:{tenant_id}:editors") or []
             editor_obj = next((e for e in editors if e.get("name") == editor_name), None)
             if editor_obj and editor_obj.get("email"):
-                brand = tenant_doc.get("brand_name") or "Asistente"
+                brand = tenant_doc.get("brand_name") or "Crudo"
                 subject = f"🚨 Revisión del cliente — {client_name}"
                 text = (f"Hola {editor_name},\n\n{client_name} pidió un cambio sobre: {task_title}\n\n"
                         f"Mensaje del cliente:\n{message}\n\n"

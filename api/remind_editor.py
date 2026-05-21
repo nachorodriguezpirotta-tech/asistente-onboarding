@@ -56,7 +56,7 @@ def _days_old(created_at_iso: str) -> int:
 
 def build_editor_reminder(tenant: dict, editor: dict, tasks: list, assignments: list, base_host: str = "") -> tuple:
     """Devuelve (subject, text, html) con el resumen de pendientes del editor."""
-    brand = tenant.get("brand_name") or "Asistente"
+    brand = tenant.get("brand_name") or "Crudo"
     editor_name = editor.get("name", "Editor")
     editor_tasks = [t for t in tasks if t.get("assignee") == editor_name and t.get("status") != "done"]
 

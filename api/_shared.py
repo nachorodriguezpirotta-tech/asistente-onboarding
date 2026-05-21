@@ -285,7 +285,7 @@ def notify_admin(subject: str, body_text: str, body_html: Optional[str] = None):
     msg = MIMEMultipart("alternative")
     msg["To"] = ADMIN_NOTIFY_EMAIL
     msg["Subject"] = subject
-    msg["From"] = "Asistente Onboarding"
+    msg["From"] = "Crudo"
     msg.attach(MIMEText(body_text, "plain", "utf-8"))
     if body_html:
         msg.attach(MIMEText(body_html, "html", "utf-8"))

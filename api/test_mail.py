@@ -55,7 +55,7 @@ class handler(BaseHTTPRequestHandler):
         if not admin_email:
             return json_response(self, {"error": "Configurá tu email primero en Config → Tus notificaciones"}, 400)
 
-        brand = tenant.get("brand_name") or "Asistente"
+        brand = tenant.get("brand_name") or "Crudo"
 
         # Buscar o crear un cliente con portal_token para el test
         clients = kv_get(f"tenant:{tenant_id}:clients") or []

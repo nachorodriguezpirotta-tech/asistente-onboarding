@@ -172,7 +172,7 @@ class handler(BaseHTTPRequestHandler):
             try:
                 tenant = kv_get(f"tenant:{tenant_id}") or {}
                 if tenant.get("notify_on_task_done") and tenant.get("admin_email"):
-                    brand = tenant.get("brand_name") or "Asistente"
+                    brand = tenant.get("brand_name") or "Crudo"
                     cli = updated.get("client") or updated.get("title") or "—"
                     asg = updated.get("assignee") or "—"
                     subject = f"✅ {asg} entregó: {cli}"
