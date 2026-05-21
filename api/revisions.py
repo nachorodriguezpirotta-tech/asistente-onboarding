@@ -166,8 +166,10 @@ class handler(BaseHTTPRequestHandler):
 
         revisions = kv_get(f"tenant:{tenant_id}:revisions") or []
         updated = None
+        prev_status = None
         for r in revisions:
             if r.get("id") == rid:
+                prev_status = r.get("status")
                 # Campos string
                 for field in ("status", "resolution_note"):
                     if field in data:
@@ -183,6 +185,42 @@ class handler(BaseHTTPRequestHandler):
         if not updated:
             return json_response(self, {"error": "Revisión no encontrada"}, 404)
         kv_set(f"tenant:{tenant_id}:revisions", revisions)
+
+        # Mail al admin cuando la revisión pasa de open → resolved
+        if prev_status != "resolved" and updated.get("status") == "resolved":
+            try:
+                tenant = kv_get(f"tenant:{tenant_id}") or {}
+                if tenant.get("notify_on_revision") and tenant.get("admin_email"):
+                    brand = tenant.get("brand_name") or "Asistente"
+                    cli = updated.get("client_name", "—")
+                    msg = updated.get("message", "")
+                    resnote = updated.get("resolution_note", "")
+                    # Buscar editor de la task
+                    tasks = kv_get(f"tenant:{tenant_id}:tasks") or []
+                    task = next((t for t in tasks if t.get("id") == updated.get("task_id")), None)
+                    editor = (task or {}).get("assignee", "—")
+                    task_title = (task or {}).get("title") or (task or {}).get("client") or "—"
+
+                    subject = f"✅ Revisión resuelta — {cli}"
+                    text = (f"La revisión de {cli} sobre '{task_title}' quedó resuelta.\n\n"
+                            f"Pedido original: {msg}\n"
+                            f"{'Nota de resolución: ' + resnote if resnote else ''}\n\n"
+                            f"Editor: {editor}\n\n— {brand}")
+                    html = (f"<html><body style='font-family:-apple-system,Segoe UI,sans-serif;"
+                            f"max-width:600px;color:#222;line-height:1.6;'>"
+                            f"<h2 style='color:#4ade80;'>✅ Revisión resuelta</h2>"
+                            f"<p><strong>{cli}</strong> — <em>{task_title}</em></p>"
+                            f"<div style='background:#f3f4f6;border-left:3px solid #888;padding:10px 14px;"
+                            f"border-radius:6px;margin:10px 0;color:#000;font-size:13px;'>"
+                            f"<strong>Pedido original:</strong><br>{msg}</div>"
+                            f"{'<div style=\"background:rgba(74,222,128,0.1);border-left:3px solid #4ade80;padding:10px 14px;border-radius:6px;margin:10px 0;color:#000;font-size:13px;\"><strong>Resolución:</strong><br>' + resnote + '</div>' if resnote else ''}"
+                            f"<p>Editor: <strong>{editor}</strong></p>"
+                            f"<hr><p style='color:#888;font-size:12px;'>— {brand}</p>"
+                            f"</body></html>")
+                    notify_via_tenant(tenant_id, tenant["admin_email"], subject, text, html)
+            except Exception:
+                pass
+
         return json_response(self, {"ok": True, "revision": updated})
 
     def do_DELETE(self):
