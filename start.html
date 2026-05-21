@@ -161,28 +161,6 @@
         <input type="text" id="custom_assignee" placeholder="responsable">
       </div>
 
-      <label>¿De dónde leemos los archivos en Drive?</label>
-      <div class="drive-options">
-        <label class="drive-opt">
-          <input type="radio" name="drive_mode" value="folder" checked>
-          <div>
-            <strong>Una carpeta específica</strong>
-            <div class="opt-hint">Pegá el link de la carpeta donde están los proyectos</div>
-          </div>
-        </label>
-        <label class="drive-opt">
-          <input type="radio" name="drive_mode" value="my_drive">
-          <div>
-            <strong>Toda mi unidad de Drive</strong>
-            <div class="opt-hint">El sistema mira todo Mi unidad (recomendado si todos tus proyectos están sueltos)</div>
-          </div>
-        </label>
-      </div>
-      <div id="folder-input-wrapper">
-        <input type="url" id="drive_url" placeholder="https://drive.google.com/drive/folders/..." style="margin-top: 8px;">
-        <div class="hint">Copialo desde la URL de la carpeta en tu navegador</div>
-      </div>
-
       <div id="error1"></div>
 
       <button id="submit1" type="button">Continuar →</button>
@@ -289,26 +267,12 @@
       card.insertBefore(w, card.firstChild);
     }
 
-    // Toggle del input de carpeta según radio "drive_mode"
-    document.querySelectorAll('input[name="drive_mode"]').forEach(r => {
-      r.addEventListener('change', () => {
-        const isFolder = document.querySelector('input[name="drive_mode"]:checked').value === 'folder';
-        document.getElementById('folder-input-wrapper').style.display = isFolder ? 'block' : 'none';
-        document.getElementById('drive_url').required = isFolder;
-      });
-    });
-
     // Step 1 → 2
     document.getElementById('submit1').onclick = async () => {
-      const driveMode = document.querySelector('input[name="drive_mode"]:checked').value;
       const data = {
         brand_name: document.getElementById('brand_name').value.trim(),
         admin_email: document.getElementById('admin_email').value.trim(),
         preset: document.getElementById('preset').value,
-        drive_mode: driveMode,
-        drive_url: driveMode === 'my_drive'
-          ? 'https://drive.google.com/drive/my-drive'
-          : document.getElementById('drive_url').value.trim(),
       };
 
       // Si eligió "custom", agregar los campos custom
@@ -326,10 +290,6 @@
         err.innerHTML = '<div class="error">Completá todos los campos y elegí un tipo de negocio.</div>';
         return;
       }
-      if (driveMode === 'folder' && !data.drive_url) {
-        err.innerHTML = '<div class="error">Pegá el link de la carpeta de Drive o elegí "Toda mi unidad".</div>';
-        return;
-      }
       if (data.preset === 'custom') {
         if (!data.custom_description || !data.custom_input || !data.custom_output || !data.custom_assignee) {
           err.innerHTML = '<div class="error">Completá los 4 campos del negocio custom.</div>';
@@ -338,10 +298,6 @@
       }
       if (!/^[^@]+@[^@]+\.[^@]+$/.test(data.admin_email)) {
         err.innerHTML = '<div class="error">Email inválido.</div>';
-        return;
-      }
-      if (driveMode === 'folder' && !/drive\.google\.com\/.*folders\//.test(data.drive_url)) {
-        err.innerHTML = '<div class="error">El link de Drive debe ser de una carpeta (debe contener "/folders/"). Copialo desde la URL de tu carpeta.</div>';
         return;
       }
 
