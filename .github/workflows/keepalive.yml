@@ -1,0 +1,35 @@
+name: Keepalive (evita el auto-disable de GitHub a los 60 días)
+# GitHub deshabilita los workflows cron cuando el repo pasa 60 días sin
+# actividad (pasó el 21/jul/2026: apagó daily-reminders, scan de tenants y
+# retry de pedidos → EditFlow quedó muerto en silencio). Este workflow hace un
+# commit trivial cada 45 días para resetear ese contador.
+on:
+  schedule:
+    - cron: '0 8 1,15 * *'   # 1 y 15 de cada mes (redundante a propósito)
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit keepalive si hace falta
+        run: |
+          git config user.name "keepalive-bot"
+          git config user.email "bot@revolv.local"
+          # Solo commitear si el último commit tiene más de 40 días
+          LAST=$(git log -1 --format=%ct)
+          NOW=$(date +%s)
+          AGE_DAYS=$(( (NOW - LAST) / 86400 ))
+          echo "último commit hace $AGE_DAYS días"
+          if [ "$AGE_DAYS" -ge 40 ]; then
+            date -u +%Y-%m-%dT%H:%M:%SZ > .keepalive
+            git add .keepalive
+            git commit -m "keepalive: mantener workflows cron activos [skip ci]"
+            git push
+            echo "✅ commit keepalive pusheado"
+          else
+            echo "repo activo, no hace falta"
+          fi
